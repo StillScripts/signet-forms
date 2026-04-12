@@ -25,6 +25,13 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - phpunit/phpunit (PHPUNIT) - v12
 - tailwindcss (TAILWINDCSS) - v4
 
+## Skill Storage & Sync
+
+- Store all project skills in `.agents/skills` as the source of truth.
+- Mirror each skill into `.claude/skills` using symlinks, not duplicated directories.
+- When adding a skill, create it in `.agents/skills/<skill-name>` first, then link it from `.claude/skills/<skill-name>`.
+- Keep `CLAUDE.md` as a symlink to `AGENTS.md` so both entry points stay in sync.
+
 ## Skills Activation
 
 This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
