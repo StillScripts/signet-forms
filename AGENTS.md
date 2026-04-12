@@ -54,11 +54,15 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 This project uses structured documentation to ensure every feature has a clear spec with reasoning. These docs will eventually power a doc site.
 
-- `product-brainstorming` — Use when exploring a new feature idea, problem space, or product direction. Acts as a thinking partner that challenges assumptions and pushes ideas further. Activate when the user wants to brainstorm, explore problems, ideate solutions, or stress-test assumptions before writing a spec.
-- `write-spec` — Use when a feature needs a formal specification or PRD. Produces structured docs with problem statement, goals, non-goals, user stories, prioritized requirements, success metrics, and open questions. Activate after brainstorming converges on a direction, or when the user says "write a spec" or "create a PRD".
-- `doc-coauthoring` — Use for collaboratively authoring any substantial document (specs, proposals, decision docs, RFCs). Provides a three-stage workflow: Context Gathering, Refinement & Structure, and Reader Testing. Activate when the user wants to co-write a document or refine an existing spec.
+**Every feature task must produce a spec before implementation begins.** The workflow is:
 
-Feature specs live in `docs/specs/` and follow the naming convention `TASK-<number>-slug.md`. Every feature task should produce a spec before implementation begins.
+1. `/product-brainstorming` — Explore the problem space. Use when the feature is new or ambiguous. Challenges assumptions and pushes ideas further. Skip if the task is well-defined.
+2. `/write-spec` — Write the formal spec. Produces a structured document with problem statement, goals, non-goals, user stories, prioritized requirements, success metrics, and open questions. This is the mandatory step for feature tasks.
+3. `/doc-coauthoring` — Refine collaboratively. Use when the user wants to iterate on the spec through its three-stage workflow (Context Gathering, Refinement & Structure, Reader Testing). Optional but recommended for complex features.
+
+Feature specs live in `docs/specs/` and follow the naming convention `TASK-<number>-slug.md`. The spec is the contract for what gets built — get user sign-off before implementation.
+
+**When to skip the spec:** Non-feature work (`chore`, `ci`, `build`, `meta`, `license`, `style`), documentation-only tasks, test-only tasks, or when the user explicitly says to skip it.
 
 ## Workflow Skills
 

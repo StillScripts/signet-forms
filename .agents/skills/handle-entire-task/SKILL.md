@@ -41,7 +41,24 @@ Task key format and allocation rules are defined in `/task-management` and must 
 
 3. **Continue with the newly created task key** for the remaining phases.
 
-### Phase 2: Set Up the Branch
+### Phase 2: Write the Spec
+
+Every feature task must have a spec before implementation begins. This ensures clear reasoning, scope alignment, and creates documentation that will eventually power the doc site.
+
+1. **Brainstorm (if needed).** For new or ambiguous features, use `/product-brainstorming` to explore the problem space, challenge assumptions, and converge on a direction. Skip if the task is well-defined and the user has a clear vision.
+
+2. **Write the spec.** Use `/write-spec` to produce a structured specification in `docs/specs/TASK-<number>-slug.md`. The spec should include problem statement, goals, non-goals, user stories, prioritized requirements, success metrics, and open questions.
+
+3. **Refine collaboratively (if needed).** If the user wants to iterate on the spec, use `/doc-coauthoring` to co-write and refine the document through its three-stage workflow.
+
+4. **Get sign-off.** Share the spec with the user and get confirmation before proceeding to implementation. The spec is the contract for what gets built.
+
+**When to skip this phase:**
+- Non-feature work: `chore`, `ci`, `build`, `meta`, `license`, `style` branch types
+- Documentation-only or test-only tasks
+- Tasks where the user explicitly says to skip the spec
+
+### Phase 3: Set Up the Branch
 
 Use the `/create-branch` skill with the task key. This handles:
 
@@ -49,7 +66,7 @@ Use the `/create-branch` skill with the task key. This handles:
 - Pulling latest from the correct base branch (`develop` for most types, `main` for urgent production fixes)
 - Creating the branch with proper naming (`feat/TASK-42-slug`)
 
-### Phase 3: Investigate the Codebase
+### Phase 4: Investigate the Codebase
 
 Before writing any code, understand the relevant parts of the codebase. This step prevents wasted effort and ensures you follow existing patterns.
 
@@ -71,7 +88,7 @@ Before writing any code, understand the relevant parts of the codebase. This ste
 
 6. **Identify the scope** — List the files you plan to modify. If the scope is larger than expected, flag this to the user before proceeding.
 
-### Phase 4: Implement
+### Phase 5: Implement
 
 Write the code changes. Follow these principles:
 
@@ -82,7 +99,7 @@ Write the code changes. Follow these principles:
 - **PHP 8.3 features** — Constructor property promotion, attributes, enums, named arguments, explicit return types
 - **Migration safety** — Always generate migration files with `php artisan make:migration` to get correct timestamps. Never create migration files manually.
 
-### Phase 5: Test
+### Phase 6: Test
 
 1. **Write tests** using Pest following existing patterns. Activate the `/pest-testing` skill for guidance. Use `php artisan make:test --pest {name}` to create test files.
 
@@ -102,7 +119,7 @@ Write the code changes. Follow these principles:
 
 5. Every change must be tested — this is a hard rule for this project. The only exception is changes to skill files, config, or documentation.
 
-### Phase 6: Lint
+### Phase 7: Lint
 
 Use the `/lint` skill:
 
@@ -111,7 +128,7 @@ Use the `/lint` skill:
 
 Fix any issues before proceeding.
 
-### Phase 7: Clean Up
+### Phase 8: Clean Up
 
 If you're using Claude Code use the inbuilt `/simplify` skill, otherwise use the `/deslop` skill to review the changes for:
 
@@ -122,7 +139,7 @@ If you're using Claude Code use the inbuilt `/simplify` skill, otherwise use the
 
 Apply valid fixes. Run Pint again after cleanup.
 
-### Phase 8: Find Bugs
+### Phase 9: Find Bugs
 
 Use the `/find-bugs` skill to review your changes before committing. This is the final quality gate — catch security vulnerabilities, bugs, and code quality issues before they reach the PR.
 
@@ -130,7 +147,7 @@ Use the `/find-bugs` skill to review your changes before committing. This is the
 - Fix any Critical or High severity findings before proceeding
 - Medium/Low findings: use your judgment — fix if quick, otherwise note them in the PR description for the reviewer
 
-### Phase 9: Commit
+### Phase 10: Commit
 
 Use the `/commit` skill to create a properly formatted commit:
 
@@ -140,7 +157,7 @@ Use the `/commit` skill to create a properly formatted commit:
 
 # NOTE - Stop here because we haven't make a remote yet, I'll do local reviews and merges!!!
 
-### Phase 10: Create PR
+### Phase 11: Create PR
 
 Use the `/create-pr` skill to:
 
@@ -150,7 +167,7 @@ Use the `/create-pr` skill to:
 - Include the task key in the PR title and body
 - Follow the canonical policy block in `AGENTS.md` for PR body requirements
 
-### Phase 11: Iterate Until CI Passes
+### Phase 12: Iterate Until CI Passes
 
 Use the `/iterate-pr` skill to:
 
@@ -173,11 +190,12 @@ Use the `/iterate-pr` skill to:
 
 ## When to Skip Phases
 
-- **Phase 5 (Test):** Skip if the change is documentation-only, skill files only, or config-only
-- **Phase 6 (Lint):** Skip if no PHP/CSS/JS files were changed
-- **Phase 7 (Clean Up):** Skip if the diff is under ~10 lines or is config-only
-- **Phase 8 (Find Bugs):** Skip if the change is documentation-only, skill files only, or config-only
-- **Phase 11 (Iterate):** The user may prefer to handle CI iteration separately — ask if they want you to wait for CI
+- **Phase 2 (Spec):** Skip for non-feature work (`chore`, `ci`, `build`, `meta`, `license`, `style`), docs-only, or test-only tasks. Also skip if the user explicitly says to.
+- **Phase 6 (Test):** Skip if the change is documentation-only, skill files only, or config-only
+- **Phase 7 (Lint):** Skip if no PHP/CSS/JS files were changed
+- **Phase 8 (Clean Up):** Skip if the diff is under ~10 lines or is config-only
+- **Phase 9 (Find Bugs):** Skip if the change is documentation-only, skill files only, or config-only
+- **Phase 12 (Iterate):** The user may prefer to handle CI iteration separately — ask if they want you to wait for CI
 
 ## Example Usage
 
@@ -187,17 +205,19 @@ User: /handle-entire-task TASK-42
 
 Claude reads the task from TASKS.md, summarises it, gets confirmation, then autonomously:
 
-1. Checks out `feat/TASK-42-add-team-role-management`
-2. Activates `/laravel-best-practices` and searches docs for role/permission patterns
-3. Finds Team model, Membership model, TeamRole enum, and TeamSettings page
-4. Implements role assignment with permission checks
-5. Writes Pest tests for role changes, permission enforcement, and edge cases
-6. Lints — Pint reports 0 issues
-7. Cleans up — removes 3 unnecessary comments, simplifies one null check
-8. Runs find-bugs — no critical issues, one medium info note added to PR description
-9. Commits with `[TASK-42] Add team role management with permission hierarchy`
-10. Creates PR targeting develop
-11. Iterates until all CI checks pass
+1. Uses `/product-brainstorming` to explore role hierarchy options, then `/write-spec` to create `docs/specs/TASK-42-team-role-management.md`
+2. Gets user sign-off on the spec
+3. Checks out `feat/TASK-42-add-team-role-management`
+4. Activates `/laravel-best-practices` and searches docs for role/permission patterns
+5. Finds Team model, Membership model, TeamRole enum, and TeamSettings page
+6. Implements role assignment with permission checks
+7. Writes Pest tests for role changes, permission enforcement, and edge cases
+8. Lints — Pint reports 0 issues
+9. Cleans up — removes 3 unnecessary comments, simplifies one null check
+10. Runs find-bugs — no critical issues, one medium info note added to PR description
+11. Commits with `[TASK-42] Add team role management with permission hierarchy`
+12. Creates PR targeting develop
+13. Iterates until all CI checks pass
 
 ## Tips
 
