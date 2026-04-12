@@ -183,7 +183,7 @@ Check sibling files, related controllers, models, or tests for established patte
 
 ## How to Apply
 
-Always use a sub-agent to read rule files and explore this skill's content.
+Prefer a sub-agent when exploration is broad or spans many rule files; use direct reads for narrow, focused checks.
 
 1. Identify the file type and select relevant sections (e.g., migration → §16, controller → §1, §3, §5, §6, §10)
 2. Check sibling files for existing patterns — follow those first per Consistency First

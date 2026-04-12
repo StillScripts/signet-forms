@@ -81,12 +81,14 @@ TASK-42
 - Notes on specific areas that need careful review
 
 **Do NOT include:**
-- "Test plan" sections or checkbox lists of manual testing steps
+- "Test plan" sections by default
 - Redundant summaries of the diff (reviewers can read the code)
+
+Only include a test plan section if the user explicitly asks for one.
 
 ### Step 5: Create the PR
 
-Create as a draft PR so CI can run before requesting review:
+Create as a draft PR so CI can run before requesting review. Follow the canonical policy block in `AGENTS.md` if any wording conflict appears.
 
 ```bash
 gh pr create --draft --base develop --title "<type>(scope): Description — TASK-42" --body "$(cat <<'EOF'
@@ -108,7 +110,7 @@ The type prefix should match the branch type:
 - `feat(teams): Add role management — TASK-42`
 - `fix(auth): Handle null user on login redirect — TASK-15`
 - `ref(notifications): Extract to shared service — TASK-30`
-- `chore(ci): Update PHP matrix to 8.4 — TASK-51`
+- `chore(ci): Update PHP matrix to 8.3 — TASK-51`
 - `docs(api): Add endpoint documentation — TASK-60`
 
 Task key format comes from `/task-management` and is the source of truth.

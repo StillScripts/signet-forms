@@ -9,6 +9,8 @@ Create a properly formatted commit following project conventions.
 
 ## Commit Message Format
 
+Follow the canonical policy block in `AGENTS.md` if any local examples conflict.
+
 ```
 [TASK-42] Add team role management
 

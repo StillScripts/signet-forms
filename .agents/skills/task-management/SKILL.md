@@ -24,19 +24,13 @@ Every task must have a unique key in this format:
 - If it exists, read/write to it
 - If it doesn't exist, create it with the template below
 
-## Dashboard Setup (First Run)
+## Environment-Agnostic Behavior
 
-A visual dashboard is available for managing tasks and memory. **On first interaction with tasks:**
+This skill must work in any local agent environment without plugin-specific dependencies.
 
-1. Check if `dashboard.html` exists in the current working directory
-2. If not, copy it from `${CLAUDE_PLUGIN_ROOT}/skills/dashboard.html` to the current working directory
-3. Inform the user: "I've added the dashboard. Run `/productivity:start` to set up the full system."
-
-The task board:
-- Reads and writes to the same `TASKS.md` file
-- Auto-saves changes
-- Watches for external changes (syncs when you edit via CLI)
-- Supports drag-and-drop reordering of tasks and sections
+- Do not rely on `${CLAUDE_PLUGIN_ROOT}` or external dashboard templates.
+- Do not require `/productivity:start` or any command outside this repository.
+- Use `TASKS.md` as the canonical task store and source of truth.
 
 ## Format & Template
 

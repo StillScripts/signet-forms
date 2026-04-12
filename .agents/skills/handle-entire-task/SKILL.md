@@ -48,7 +48,6 @@ Use the `/create-branch` skill with the task key. This handles:
 - Classifying the branch type (`feat`, `fix`, `ref`, `chore`, etc.)
 - Pulling latest from the correct base branch (`develop` for most types, `main` for urgent production fixes)
 - Creating the branch with proper naming (`feat/TASK-42-slug`)
-- Running `composer install`, `npm install`, `php artisan migrate`
 
 ### Phase 3: Investigate the Codebase
 
@@ -80,7 +79,7 @@ Write the code changes. Follow these principles:
 - **Follow existing patterns** — Match the style and conventions of surrounding code. Check sibling files.
 - **Don't over-engineer** — No speculative abstractions or unnecessary refactoring
 - **Use `php artisan make:` commands** — For new models, controllers, migrations, tests, etc. Always pass `--no-interaction` and the correct options.
-- **PHP 8.3+ features** — Constructor property promotion, attributes, enums, named arguments, explicit return types
+- **PHP 8.3 features** — Constructor property promotion, attributes, enums, named arguments, explicit return types
 - **Migration safety** — Always generate migration files with `php artisan make:migration` to get correct timestamps. Never create migration files manually.
 
 ### Phase 5: Test
@@ -135,7 +134,7 @@ Use the `/commit` skill to create a properly formatted commit:
 
 - `[TASK-<number>] Imperative description` subject line
 - Optional body explaining what and why
-- `Co-Authored-By: Claude <noreply@anthropic.com>`
+- AI attribution that matches the active tool/agent
 
 ### Phase 10: Create PR
 
@@ -145,12 +144,13 @@ Use the `/create-pr` skill to:
 - Create a PR with comprehensive description
 - Target the correct base branch (`develop` for features, `main` for hotfixes)
 - Include the task key in the PR title and body
+- Follow the canonical policy block in `AGENTS.md` for PR body requirements
 
 ### Phase 11: Iterate Until CI Passes
 
 Use the `/iterate-pr` skill to:
 
-- Monitor CI checks (Pint lint + Pest tests across PHP 8.3/8.4/8.5)
+- Monitor CI checks for the project's supported PHP versions
 - Fix any failures
 - Push fixes and re-check until all checks pass
 
@@ -193,7 +193,7 @@ Claude reads the task from TASKS.md, summarises it, gets confirmation, then auto
 8. Runs find-bugs — no critical issues, one medium info note added to PR description
 9. Commits with `[TASK-42] Add team role management with permission hierarchy`
 10. Creates PR targeting develop
-11. Iterates until all CI checks pass (PHP 8.3, 8.4, 8.5)
+11. Iterates until all CI checks pass
 
 ## Tips
 

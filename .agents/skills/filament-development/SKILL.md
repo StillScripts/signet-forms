@@ -239,7 +239,7 @@ This project uses Filament's built-in tenancy with the Team model.
 
 ## Authentication
 
-Filament v5 has built-in authentication features — no need for Fortify or custom auth controllers.
+Filament v5 has built-in panel authentication features. Use these for Filament panel auth; evaluate Fortify or custom flows separately for non-panel authentication paths.
 
 ### Features
 

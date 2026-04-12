@@ -70,11 +70,9 @@ After fixing locally:
 2. Stage and commit the fix:
    ```bash
    git add -A
-   git commit -m "[TASK-<number>] Fix CI: brief description of fix
-
-   Co-Authored-By: Claude <noreply@anthropic.com>"
+   git commit -m "[TASK-<number>] Fix CI: brief description of fix"
    ```
-   Use the existing PR task key. Task key format is defined by `/task-management`.
+   Use the existing PR task key. Task key format is defined by `/task-management`. Use the `/commit` skill's attribution rules if AI attribution is needed.
 
 3. Push and watch:
    ```bash
@@ -91,7 +89,7 @@ If checks fail again, diagnose and fix. Continue until all checks pass.
 - The same check fails **3 or more times** after fixes — something fundamental might be wrong
 - Test failures are in code you didn't touch — could be a flaky test or unrelated breakage
 - CI requires secrets or environment variables you don't have access to
-- The failure is in a matrix job for a PHP version that behaves differently (e.g., 8.5 deprecations)
+- The failure is in a matrix job for a PHP version that behaves differently from local assumptions
 
 ## Review Feedback
 
