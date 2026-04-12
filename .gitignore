@@ -21,3 +21,8 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Memory: keep only documentation READMEs in git
+/memory/**
+!/memory/**/
+!/memory/**/README.md
