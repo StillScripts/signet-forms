@@ -27,9 +27,9 @@ Task key format and allocation rules are defined in `/task-management` and must 
 1. **Read the task** from `TASKS.md`. Look up the task by key and read its description, acceptance criteria, and any notes.
 
 2. **Summarise the task** back to the user in 2-3 sentences. Include:
-   - What needs to be done
-   - Any constraints or scope limits
-   - Your initial read on which files/areas of the codebase are involved
+    - What needs to be done
+    - Any constraints or scope limits
+    - Your initial read on which files/areas of the codebase are involved
 
 3. **Ask the user to confirm** before proceeding. If anything is unclear or ambiguous, ask clarifying questions now — not mid-implementation.
 
@@ -54,14 +54,14 @@ Use the `/create-branch` skill with the task key. This handles:
 Before writing any code, understand the relevant parts of the codebase. This step prevents wasted effort and ensures you follow existing patterns.
 
 1. **Activate domain skills.** Based on what the task involves, read the relevant skill:
-   - Filament pages, resources, tables, actions, tenancy → `/filament-development`
-   - Livewire components → `/livewire-development`
-   - Any PHP code → `/laravel-best-practices`
-   - Styling → `/tailwindcss-development`
+    - Filament pages, resources, tables, actions, tenancy → `/filament-development`
+    - Livewire components → `/livewire-development`
+    - Any PHP code → `/laravel-best-practices`
+    - Styling → `/tailwindcss-development`
 
 2. **Use Laravel Boost MCP** to research before coding:
-   - `search-docs` — Look up relevant Laravel/Filament/Livewire documentation
-   - `database-schema` — Inspect table structures before writing migrations or queries
+    - `search-docs` — Look up relevant Laravel/Filament/Livewire documentation
+    - `database-schema` — Inspect table structures before writing migrations or queries
 
 3. **Search for related files** — Use Grep/Glob to find models, controllers, actions, Filament pages, and views related to the task.
 
@@ -87,14 +87,16 @@ Write the code changes. Follow these principles:
 1. **Write tests** using Pest following existing patterns. Activate the `/pest-testing` skill for guidance. Use `php artisan make:test --pest {name}` to create test files.
 
 2. **Run existing tests** for the area you've changed:
-   ```bash
-   php artisan test --compact --filter=RelevantTest
-   ```
+
+    ```bash
+    php artisan test --compact --filter=RelevantTest
+    ```
 
 3. **Run your new tests:**
-   ```bash
-   php artisan test --compact tests/Feature/YourNewTest.php
-   ```
+
+    ```bash
+    php artisan test --compact tests/Feature/YourNewTest.php
+    ```
 
 4. If tests fail, diagnose and fix. Don't move to the next phase until tests are green.
 
@@ -111,7 +113,7 @@ Fix any issues before proceeding.
 
 ### Phase 7: Clean Up
 
-Use the `/deslop` skill to review the changes for:
+If you're using Claude Code use the inbuilt `/simplify` skill, otherwise use the `/deslop` skill to review the changes for:
 
 - Unnecessary comments that restate the code
 - Over-defensive patterns (redundant null checks, empty try/catch)
