@@ -1,68 +1,112 @@
 ---
 name: find-bugs
-description: Review code changes for security vulnerabilities, bugs, and quality issues specific to Laravel, Filament, and Livewire. Use before creating a PR, during code review, or whenever the user wants a thorough check of their changes. Covers SQL injection, mass assignment, authorization gaps, and Laravel-specific pitfalls.
+description: Find bugs, security vulnerabilities, and code quality issues in local branch changes. Use when asked to review changes, find bugs, security review, or audit code on the current branch. Covers Laravel, Filament, and Livewire-specific pitfalls alongside OWASP top 10.
 ---
 
 # Find Bugs
 
-Perform a security and quality review of the current branch's changes, tailored to this Laravel + Filament + Livewire stack.
+Review changes on this branch for bugs, security vulnerabilities, and code quality issues.
 
-## Process
+## Phase 1: Complete Input Gathering
 
-1. **Get the full diff:**
-   ```bash
-   git diff develop...HEAD
-   ```
-   (Use `main` for hotfix branches.)
+1. Determine the base branch: use `main` for hotfix branches, `develop` for everything else
+2. Get the FULL diff: `git diff <base-branch>...HEAD`
+2. If output is truncated, read each changed file individually until you have seen every changed line
+3. List all files modified in this branch before proceeding
 
-2. **Map the attack surface.** For each changed file, note what it touches:
-   - Models → mass assignment, relationships, scopes
-   - Controllers/Actions → authorization, input validation
-   - Filament Pages → tenant isolation, form validation, table actions
-   - Migrations → data integrity, rollback safety
-   - Routes → middleware, authentication guards
-   - Blade/Livewire → XSS, unescaped output
+## Phase 2: Attack Surface Mapping
 
-3. **Run through the security checklist:**
+For each changed file, identify and list:
 
-   **Authorization & Tenancy:**
-   - Are Filament pages properly scoped to the current tenant?
-   - Do policy checks exist for all destructive actions?
-   - Is `Gate::allows()` or `$this->authorize()` used before state changes?
-   - Can a user from Team A access Team B's resources?
+- All user inputs (request params, headers, body, URL components)
+- All database queries (Eloquent, Query Builder, raw SQL)
+- All authentication/authorization checks (Gates, policies, middleware)
+- All session/state operations
+- All external calls (HTTP, queues, notifications)
+- All cryptographic operations
+- All file uploads and storage operations
 
-   **Mass Assignment:**
-   - Are `$fillable` or `#[Fillable]` attributes correctly set?
-   - Are there any `Model::create($request->all())` patterns? (These bypass fillable.)
+Then classify the file by what it touches:
 
-   **SQL & Query Safety:**
-   - Any raw SQL or `DB::raw()` with user input?
-   - N+1 query risks in new relationships or loops?
-   - Missing indexes on columns used in `where` clauses?
+- **Models** → mass assignment, relationships, scopes, casts
+- **Controllers/Actions** → authorization, input validation, response data
+- **Filament Pages/Resources** → tenant isolation, form validation, table actions, bulk actions
+- **Migrations** → data integrity, rollback safety, index coverage
+- **Routes** → middleware, authentication guards, rate limiting
+- **Blade/Livewire** → XSS, unescaped output, public property exposure
 
-   **Input Validation:**
-   - Are form inputs validated before use?
-   - Are custom `Rule` classes used correctly?
-   - Does file upload validation check MIME types, not just extensions?
+## Phase 3: Security Checklist (check EVERY item for EVERY file)
 
-   **Livewire-Specific:**
-   - Are public properties that shouldn't be user-modifiable protected?
-   - Do Livewire actions validate before persisting?
+### General Security (OWASP)
 
-   **General:**
-   - Secrets or credentials in committed code?
-   - Debug/log statements left in production code?
-   - Error messages that leak internal details?
+- [ ] **Injection**: SQL injection (especially `DB::raw()`, `whereRaw()` with user input), command injection, template injection, header injection
+- [ ] **XSS**: All outputs in templates properly escaped? Unescaped `{!! !!}` justified?
+- [ ] **Authentication**: Auth checks on all protected operations?
+- [ ] **Authorization/IDOR**: Access control verified, not just auth? Can User A access User B's resources?
+- [ ] **CSRF**: State-changing operations protected?
+- [ ] **Race conditions**: TOCTOU in any read-then-write patterns?
+- [ ] **Session**: Fixation, expiration, secure flags?
+- [ ] **Cryptography**: Secure random, proper algorithms, no secrets in logs?
+- [ ] **Information disclosure**: Error messages, logs, debug output, timing attacks?
+- [ ] **DoS**: Unbounded operations, missing rate limits, resource exhaustion?
+- [ ] **Business logic**: Edge cases, state machine violations, numeric overflow?
 
-4. **Verify each finding** against the actual codebase before reporting. Check if existing middleware, policies, or base classes already handle the concern. False positives waste the user's time.
+### Laravel-Specific
 
-5. **Report findings** grouped by severity:
-   - **Critical** — Security vulnerabilities that could be exploited
-   - **Warning** — Bugs or logic errors that will cause incorrect behaviour
-   - **Info** — Code quality suggestions and minor improvements
+- [ ] **Mass assignment**: Are `$fillable` or `$guarded` correctly set? Any `Model::create($request->all())`?
+- [ ] **N+1 queries**: New relationships or loops loading related models without eager loading?
+- [ ] **Missing indexes**: Columns used in `where`/`orderBy` clauses without indexes?
+- [ ] **Validation**: Inputs validated with Form Requests or inline rules before use?
+- [ ] **File uploads**: MIME type validation (not just extension)? Storage path sanitized?
 
-## Notes
+### Filament-Specific
 
-- Always use `search-docs` (Laravel Boost MCP) to verify security best practices against the current Laravel 13 docs before flagging something as an issue.
-- This project uses Filament's built-in tenant scoping — check whether the framework already handles a concern before reporting it.
-- Focus on the diff, not the entire codebase. The goal is to catch issues in _new_ code, not audit the whole project.
+- [ ] **Tenant isolation**: Are pages/resources properly scoped to the current tenant?
+- [ ] **Policy checks**: Do destructive actions use `Gate::allows()` or `$this->authorize()`?
+- [ ] **Cross-tenant access**: Can a user from Team A access Team B's resources through Filament actions?
+- [ ] **Form schema validation**: Are Filament form inputs validated before the action runs?
+
+### Livewire-Specific
+
+- [ ] **Public property exposure**: Are public properties that shouldn't be user-modifiable protected with `#[Locked]`?
+- [ ] **Action validation**: Do Livewire actions validate before persisting?
+
+## Phase 4: Verification
+
+For each potential issue:
+
+- Check if it's already handled elsewhere in the changed code
+- Check if existing middleware, policies, or base classes already handle the concern
+- Search for existing tests covering the scenario
+- Read surrounding context to verify the issue is real
+- Use `search-docs` (Laravel Boost MCP) to verify security best practices against current Laravel/Filament docs before flagging
+
+**Important**: This project uses Filament's built-in tenant scoping — verify whether the framework already handles a concern before reporting it. False positives waste time.
+
+## Phase 5: Pre-Conclusion Audit
+
+Before finalizing, you MUST:
+
+1. List every file you reviewed and confirm you read it completely
+2. List every checklist item and note whether you found issues or confirmed it's clean
+3. List any areas you could NOT fully verify and why
+4. Only then provide your final findings
+
+## Output Format
+
+**Prioritize**: security vulnerabilities > bugs > code quality
+
+**Skip**: stylistic/formatting issues (Pint handles those)
+
+For each issue:
+
+- **File:Line** — Brief description
+- **Severity**: Critical / High / Medium / Low
+- **Problem**: What's wrong
+- **Evidence**: Why this is real (not already fixed, no existing test, no framework protection, etc.)
+- **Fix**: Concrete suggestion
+- **References**: OWASP, Laravel docs, or other standards if applicable
+
+If you find nothing significant, say so — don't invent issues.
+
+**Do not make changes — just report findings.** The user will decide what to address.

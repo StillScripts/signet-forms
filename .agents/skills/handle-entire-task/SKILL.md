@@ -122,7 +122,15 @@ Use the `/deslop` skill to review the changes for:
 
 Apply valid fixes. Run Pint again after cleanup.
 
-### Phase 8: Commit
+### Phase 8: Find Bugs
+
+Use the `/find-bugs` skill to review your changes before committing. This is the final quality gate — catch security vulnerabilities, bugs, and code quality issues before they reach the PR.
+
+- Run the full checklist against your diff
+- Fix any Critical or High severity findings before proceeding
+- Medium/Low findings: use your judgment — fix if quick, otherwise note them in the PR description for the reviewer
+
+### Phase 9: Commit
 
 Use the `/commit` skill to create a properly formatted commit:
 
@@ -130,7 +138,7 @@ Use the `/commit` skill to create a properly formatted commit:
 - Optional body explaining what and why
 - `Co-Authored-By: Claude <noreply@anthropic.com>`
 
-### Phase 9: Create PR
+### Phase 10: Create PR
 
 Use the `/create-pr` skill to:
 
@@ -139,7 +147,7 @@ Use the `/create-pr` skill to:
 - Target the correct base branch (`develop` for features, `main` for hotfixes)
 - Include the task key in the PR title and body
 
-### Phase 10: Iterate Until CI Passes
+### Phase 11: Iterate Until CI Passes
 
 Use the `/iterate-pr` skill to:
 
@@ -165,7 +173,8 @@ Use the `/iterate-pr` skill to:
 - **Phase 5 (Test):** Skip if the change is documentation-only, skill files only, or config-only
 - **Phase 6 (Lint):** Skip if no PHP/CSS/JS files were changed
 - **Phase 7 (Clean Up):** Skip if the diff is under ~10 lines or is config-only
-- **Phase 10 (Iterate):** The user may prefer to handle CI iteration separately — ask if they want you to wait for CI
+- **Phase 8 (Find Bugs):** Skip if the change is documentation-only, skill files only, or config-only
+- **Phase 11 (Iterate):** The user may prefer to handle CI iteration separately — ask if they want you to wait for CI
 
 ## Example Usage
 
@@ -182,9 +191,10 @@ Claude reads the task from TASKS.md, summarises it, gets confirmation, then auto
 5. Writes Pest tests for role changes, permission enforcement, and edge cases
 6. Lints — Pint reports 0 issues
 7. Cleans up — removes 3 unnecessary comments, simplifies one null check
-8. Commits with `[TASK-42] Add team role management with permission hierarchy`
-9. Creates PR targeting develop
-10. Iterates until all CI checks pass (PHP 8.3, 8.4, 8.5)
+8. Runs find-bugs — no critical issues, one medium info note added to PR description
+9. Commits with `[TASK-42] Add team role management with permission hierarchy`
+10. Creates PR targeting develop
+11. Iterates until all CI checks pass (PHP 8.3, 8.4, 8.5)
 
 ## Tips
 
