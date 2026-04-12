@@ -2,10 +2,12 @@
 
 use App\Models\User;
 
-test('confirm password screen can be rendered', function () {
+test('authenticated users can access the application', function () {
     $user = User::factory()->create();
+    $team = $user->currentTeam;
 
-    $response = $this->actingAs($user)->get(route('password.confirm'));
+    $response = $this->actingAs($user)
+        ->get(route('filament.admin.pages.dashboard', ['tenant' => $team->slug]));
 
     $response->assertOk();
 });

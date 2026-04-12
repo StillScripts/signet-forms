@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use Carbon\CarbonImmutable;
+use Filament\Events\TenantSet;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -24,6 +26,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        Event::listen(TenantSet::class, function (TenantSet $event): void {
+            $user = $event->getUser();
+            $tenant = $event->getTenant();
+
+            if ($user->current_team_id !== $tenant->id) {
+                $user->update(['current_team_id' => $tenant->id]);
+            }
+        });
     }
 
     /**

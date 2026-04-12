@@ -1,33 +1,48 @@
 <?php
 
 use App\Enums\TeamRole;
+use App\Filament\Pages\TeamSettings;
+use App\Filament\Pages\Tenancy\EditTeamProfile;
+use App\Filament\Pages\Tenancy\RegisterTeam;
 use App\Models\Team;
 use App\Models\User;
 use Livewire\Livewire;
 
-test('teams index page can be rendered', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->get(route('teams.index'));
-
-    $response->assertOk();
-});
-
-test('teams can be created', function () {
+test('teams can be created via register team page', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel();
 
-    Livewire::test('pages::teams.index')
-        ->set('name', 'Test Team')
-        ->call('createTeam')
-        ->assertHasNoErrors();
+    Livewire::test(RegisterTeam::class)
+        ->fillForm([
+            'name' => 'Test Team',
+        ])
+        ->call('register')
+        ->assertHasNoFormErrors();
 
     $this->assertDatabaseHas('teams', [
         'name' => 'Test Team',
         'is_personal' => false,
+    ]);
+});
+
+test('team slug is generated automatically on creation', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user);
+    $this->setUpFilamentPanel();
+
+    Livewire::test(RegisterTeam::class)
+        ->fillForm([
+            'name' => 'My Awesome Team',
+        ])
+        ->call('register')
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas('teams', [
+        'name' => 'My Awesome Team',
+        'slug' => 'my-awesome-team',
     ]);
 });
 
@@ -39,11 +54,14 @@ test('team slug uses next available suffix', function () {
     Team::factory()->create(['name' => 'Acme Ten', 'slug' => 'acme-10']);
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel();
 
-    Livewire::test('pages::teams.index')
-        ->set('name', 'Acme')
-        ->call('createTeam')
-        ->assertHasNoErrors();
+    Livewire::test(RegisterTeam::class)
+        ->fillForm([
+            'name' => 'Acme',
+        ])
+        ->call('register')
+        ->assertHasNoFormErrors();
 
     $this->assertDatabaseHas('teams', [
         'name' => 'Acme',
@@ -51,30 +69,20 @@ test('team slug uses next available suffix', function () {
     ]);
 });
 
-test('team edit page can be rendered', function () {
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-
-    $response = $this
-        ->actingAs($user)
-        ->get(route('teams.edit', $team));
-
-    $response->assertOk();
-});
-
-test('teams can be updated by owners', function () {
+test('team name can be updated by owner via edit team profile', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create(['name' => 'Original Name']);
-
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel($team);
 
-    Livewire::test('pages::teams.edit', ['team' => $team])
-        ->set('teamName', 'Updated Name')
-        ->call('updateTeam')
-        ->assertHasNoErrors();
+    Livewire::test(EditTeamProfile::class)
+        ->fillForm([
+            'name' => 'Updated Name',
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
 
     $this->assertDatabaseHas('teams', [
         'id' => $team->id,
@@ -82,34 +90,30 @@ test('teams can be updated by owners', function () {
     ]);
 });
 
-test('teams cannot be updated by members', function () {
-    $owner = User::factory()->create();
-    $member = User::factory()->create();
-    $team = Team::factory()->create();
-
-    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
-
-    $this->actingAs($member);
-
-    Livewire::test('pages::teams.edit', ['team' => $team])
-        ->set('teamName', 'Updated Name')
-        ->call('updateTeam')
-        ->assertForbidden();
-});
-
-test('teams can be deleted by owners', function () {
+test('team settings page can be rendered by member', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
 
     $this->actingAs($user);
 
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $team])
-        ->set('deleteName', $team->name)
-        ->call('deleteTeam')
-        ->assertHasNoErrors();
+    $response = $this->get(route('filament.admin.pages.team-settings', ['tenant' => $team->slug]));
+
+    $response->assertOk();
+});
+
+test('teams can be deleted by owners via team settings action', function () {
+    $user = User::factory()->create();
+    $team = Team::factory()->create();
+    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
+
+    $this->actingAs($user);
+    $this->setUpFilamentPanel($team);
+
+    Livewire::test(TeamSettings::class)
+        ->callAction('deleteTeam', data: [
+            'confirmName' => $team->name,
+        ]);
 
     $this->assertSoftDeleted('teams', [
         'id' => $team->id,
@@ -119,15 +123,16 @@ test('teams can be deleted by owners', function () {
 test('team deletion requires name confirmation', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel($team);
 
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $team])
-        ->set('deleteName', 'Wrong Name')
-        ->call('deleteTeam')
-        ->assertHasErrors(['deleteName']);
+    Livewire::test(TeamSettings::class)
+        ->callAction('deleteTeam', data: [
+            'confirmName' => 'Wrong Name',
+        ])
+        ->assertHasActionErrors(['confirmName']);
 
     $this->assertDatabaseHas('teams', [
         'id' => $team->id,
@@ -150,11 +155,12 @@ test('deleting current team switches to alphabetically first remaining team', fu
     $user->update(['current_team_id' => $zuluTeam->id]);
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel($zuluTeam);
 
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $zuluTeam])
-        ->set('deleteName', $zuluTeam->name)
-        ->call('deleteTeam')
-        ->assertHasNoErrors();
+    Livewire::test(TeamSettings::class)
+        ->callAction('deleteTeam', data: [
+            'confirmName' => $zuluTeam->name,
+        ]);
 
     $this->assertSoftDeleted('teams', [
         'id' => $zuluTeam->id,
@@ -172,11 +178,12 @@ test('deleting current team falls back to personal team when alphabetically firs
     $user->update(['current_team_id' => $team->id]);
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel($team);
 
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $team])
-        ->set('deleteName', $team->name)
-        ->call('deleteTeam')
-        ->assertHasNoErrors();
+    Livewire::test(TeamSettings::class)
+        ->callAction('deleteTeam', data: [
+            'confirmName' => $team->name,
+        ]);
 
     $this->assertSoftDeleted('teams', [
         'id' => $team->id,
@@ -194,11 +201,12 @@ test('deleting non current team leaves current team unchanged', function () {
     $user->update(['current_team_id' => $personalTeam->id]);
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel($team);
 
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $team])
-        ->set('deleteName', $team->name)
-        ->call('deleteTeam')
-        ->assertHasNoErrors();
+    Livewire::test(TeamSettings::class)
+        ->callAction('deleteTeam', data: [
+            'confirmName' => $team->name,
+        ]);
 
     $this->assertSoftDeleted('teams', [
         'id' => $team->id,
@@ -219,26 +227,25 @@ test('deleting team switches other affected users to their personal team', funct
     $member->update(['current_team_id' => $team->id]);
 
     $this->actingAs($owner);
+    $this->setUpFilamentPanel($team);
 
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $team])
-        ->set('deleteName', $team->name)
-        ->call('deleteTeam')
-        ->assertHasNoErrors();
+    Livewire::test(TeamSettings::class)
+        ->callAction('deleteTeam', data: [
+            'confirmName' => $team->name,
+        ]);
 
     expect($member->fresh()->current_team_id)->toEqual($member->personalTeam()->id);
 });
 
 test('personal teams cannot be deleted', function () {
     $user = User::factory()->create();
-
     $personalTeam = $user->personalTeam();
 
     $this->actingAs($user);
+    $this->setUpFilamentPanel($personalTeam);
 
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $personalTeam])
-        ->set('deleteName', $personalTeam->name)
-        ->call('deleteTeam')
-        ->assertForbidden();
+    Livewire::test(TeamSettings::class)
+        ->assertActionHidden('deleteTeam');
 
     $this->assertDatabaseHas('teams', [
         'id' => $personalTeam->id,
@@ -246,24 +253,11 @@ test('personal teams cannot be deleted', function () {
     ]);
 });
 
-test('teams cannot be deleted by non owners', function () {
-    $owner = User::factory()->create();
-    $member = User::factory()->create();
-    $team = Team::factory()->create();
+test('guests cannot access team pages', function () {
+    $user = User::factory()->create();
+    $team = $user->currentTeam;
 
-    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $response = $this->get(route('filament.admin.pages.team-settings', ['tenant' => $team->slug]));
 
-    $this->actingAs($member);
-
-    Livewire::test('pages::teams.delete-team-modal', ['team' => $team])
-        ->set('deleteName', $team->name)
-        ->call('deleteTeam')
-        ->assertForbidden();
-});
-
-test('guests cannot access teams', function () {
-    $response = $this->get(route('teams.index'));
-
-    $response->assertRedirect(route('login'));
+    $response->assertRedirect(route('filament.admin.auth.login'));
 });

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vendor/bin/pint:*)",
+      "Bash(php artisan:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

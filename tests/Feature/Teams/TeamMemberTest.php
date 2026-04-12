@@ -1,11 +1,13 @@
 <?php
 
 use App\Enums\TeamRole;
+use App\Filament\Pages\TeamSettings;
+use App\Models\Membership;
 use App\Models\Team;
 use App\Models\User;
 use Livewire\Livewire;
 
-test('team member role can be updated by owner', function () {
+test('team member role can be updated by owner via table action', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $team = Team::factory()->create();
@@ -13,13 +15,21 @@ test('team member role can be updated by owner', function () {
     $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
     $team->members()->attach($member, ['role' => TeamRole::Member->value]);
 
+    $membership = Membership::where('team_id', $team->id)
+        ->where('user_id', $member->id)
+        ->first();
+
     $this->actingAs($owner);
+    $this->setUpFilamentPanel($team);
 
-    Livewire::test('pages::teams.edit', ['team' => $team])
-        ->call('updateMember', $member->id, TeamRole::Admin->value)
-        ->assertHasNoErrors();
+    Livewire::test(TeamSettings::class)
+        ->callTableAction('changeRole', $membership, data: [
+            'role' => TeamRole::Admin->value,
+        ]);
 
-    expect($team->members()->where('user_id', $member->id)->first()->pivot->role->value)->toEqual(TeamRole::Admin->value);
+    expect(
+        $team->members()->where('user_id', $member->id)->first()->pivot->role->value
+    )->toEqual(TeamRole::Admin->value);
 });
 
 test('team member role cannot be updated by non owner', function () {
@@ -32,14 +42,18 @@ test('team member role cannot be updated by non owner', function () {
     $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
     $team->members()->attach($member, ['role' => TeamRole::Member->value]);
 
-    $this->actingAs($admin);
+    $membership = Membership::where('team_id', $team->id)
+        ->where('user_id', $member->id)
+        ->first();
 
-    Livewire::test('pages::teams.edit', ['team' => $team])
-        ->call('updateMember', $member->id, TeamRole::Admin->value)
-        ->assertForbidden();
+    $this->actingAs($admin);
+    $this->setUpFilamentPanel($team);
+
+    Livewire::test(TeamSettings::class)
+        ->assertTableActionHidden('changeRole', $membership);
 });
 
-test('team member can be removed by owner', function () {
+test('team member can be removed by owner via table action', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $team = Team::factory()->create();
@@ -47,12 +61,15 @@ test('team member can be removed by owner', function () {
     $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
     $team->members()->attach($member, ['role' => TeamRole::Member->value]);
 
-    $this->actingAs($owner);
+    $membership = Membership::where('team_id', $team->id)
+        ->where('user_id', $member->id)
+        ->first();
 
-    Livewire::test('pages::teams.remove-member-modal', ['team' => $team])
-        ->set('memberId', $member->id)
-        ->call('removeMember')
-        ->assertHasNoErrors();
+    $this->actingAs($owner);
+    $this->setUpFilamentPanel($team);
+
+    Livewire::test(TeamSettings::class)
+        ->callTableAction('remove', $membership);
 
     expect($member->fresh()->belongsToTeam($team))->toBeFalse();
 });
@@ -67,12 +84,15 @@ test('team member cannot be removed by non owners', function () {
     $team->members()->attach($admin, ['role' => TeamRole::Admin->value]);
     $team->members()->attach($member, ['role' => TeamRole::Member->value]);
 
-    $this->actingAs($admin);
+    $membership = Membership::where('team_id', $team->id)
+        ->where('user_id', $member->id)
+        ->first();
 
-    Livewire::test('pages::teams.remove-member-modal', ['team' => $team])
-        ->set('memberId', $member->id)
-        ->call('removeMember')
-        ->assertForbidden();
+    $this->actingAs($admin);
+    $this->setUpFilamentPanel($team);
+
+    Livewire::test(TeamSettings::class)
+        ->assertTableActionHidden('remove', $membership);
 });
 
 test('removed members current team is set to personal team', function () {
@@ -86,12 +106,15 @@ test('removed members current team is set to personal team', function () {
 
     $member->update(['current_team_id' => $team->id]);
 
-    $this->actingAs($owner);
+    $membership = Membership::where('team_id', $team->id)
+        ->where('user_id', $member->id)
+        ->first();
 
-    Livewire::test('pages::teams.remove-member-modal', ['team' => $team])
-        ->set('memberId', $member->id)
-        ->call('removeMember')
-        ->assertHasNoErrors();
+    $this->actingAs($owner);
+    $this->setUpFilamentPanel($team);
+
+    Livewire::test(TeamSettings::class)
+        ->callTableAction('remove', $membership);
 
     expect($member->fresh()->current_team_id)->toEqual($personalTeam->id);
 });

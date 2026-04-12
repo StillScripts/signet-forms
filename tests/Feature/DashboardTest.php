@@ -6,8 +6,9 @@ test('guests are redirected to the login page', function () {
     $user = User::factory()->create();
     $team = $user->currentTeam;
 
-    $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('login'));
+    $response = $this->get(route('filament.admin.pages.dashboard', ['tenant' => $team->slug]));
+
+    $response->assertRedirect(route('filament.admin.auth.login'));
 });
 
 test('authenticated users can visit the dashboard', function () {
@@ -16,7 +17,7 @@ test('authenticated users can visit the dashboard', function () {
 
     $response = $this
         ->actingAs($user)
-        ->get(route('dashboard'));
+        ->get(route('filament.admin.pages.dashboard', ['tenant' => $team->slug]));
 
     $response->assertOk();
 });

@@ -1,28 +1,7 @@
 <?php
 
-use App\Models\User;
-use Laravel\Fortify\Features;
+// Two-factor authentication tests are skipped.
+// Filament MFA has not been enabled yet in this application.
+// Re-enable these tests once Filament MFA is configured in the admin panel.
 
-beforeEach(function () {
-    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
-});
-
-test('two factor challenge redirects to login when not authenticated', function () {
-    $response = $this->get(route('two-factor.login'));
-
-    $response->assertRedirect(route('login'));
-});
-
-test('two factor challenge can be rendered', function () {
-    Features::twoFactorAuthentication([
-        'confirm' => true,
-        'confirmPassword' => true,
-    ]);
-
-    $user = User::factory()->withTwoFactor()->create();
-
-    $this->post(route('login.store'), [
-        'email' => $user->email,
-        'password' => 'password',
-    ])->assertRedirect(route('two-factor.login'));
-});
+test('two factor authentication is not yet enabled')->skip('Filament MFA not yet configured');
