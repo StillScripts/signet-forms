@@ -55,8 +55,7 @@ Use the `/create-branch` skill with the task key. This handles:
 Before writing any code, understand the relevant parts of the codebase. This step prevents wasted effort and ensures you follow existing patterns.
 
 1. **Activate domain skills.** Based on what the task involves, read the relevant skill:
-   - Working with Filament pages/resources → `/fluxui-development`
-   - Authentication changes → `/fortify-development`
+   - Filament pages, resources, tables, actions, tenancy → `/filament-development`
    - Livewire components → `/livewire-development`
    - Any PHP code → `/laravel-best-practices`
    - Styling → `/tailwindcss-development`
