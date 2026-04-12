@@ -60,7 +60,9 @@ Task keys must follow `/task-management` as the source of truth.
     - `fix` on `main` → only for urgent production hotfixes (ask the user to confirm)
     - Everything else → `develop`
 
-5. **Pull latest from the base branch:**
+5. **Checkout and pull latest from the base branch:**
+
+    Always explicitly checkout the base branch first to avoid accidentally branching off an unrelated feature branch. This prevents mixing concerns between tasks.
 
     ```bash
     git checkout develop && git pull origin develop
@@ -68,9 +70,14 @@ Task keys must follow `/task-management` as the source of truth.
 
     (or `main` for production hotfixes)
 
-6. **Create the branch:**
+    > **Important:** Never create a new branch from another feature branch. Always branch from `develop` (or `main` for hotfixes). If you're currently on a different feature branch, switch to the base branch first. Stash or commit any uncommitted changes before switching.
+
+6. **Create the branch from the base branch:**
+
+    Verify you are on the correct base branch before creating:
 
     ```bash
+    git branch --show-current  # Should output "develop" (or "main")
     git checkout -b feat/TASK-42-add-team-roles
     ```
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Projects\Resources\Forms;
 use App\Filament\Resources\Projects\ProjectResource;
 use App\Filament\Resources\Projects\Resources\Forms\Pages\CreateForm;
 use App\Filament\Resources\Projects\Resources\Forms\Pages\EditForm;
+use App\Filament\Resources\Projects\Resources\Forms\Pages\FormBuilderPage;
 use App\Filament\Resources\Projects\Resources\Forms\Pages\ListForms;
 use App\Filament\Resources\Projects\Resources\Forms\Pages\ViewForm;
 use App\Filament\Resources\Projects\Resources\Forms\Schemas\FormForm;
@@ -49,6 +50,7 @@ class FormResource extends Resource
             'create' => CreateForm::route('/create'),
             'view' => ViewForm::route('/{record}'),
             'edit' => EditForm::route('/{record}/edit'),
+            'builder' => FormBuilderPage::route('/{record}/builder'),
         ];
     }
 }

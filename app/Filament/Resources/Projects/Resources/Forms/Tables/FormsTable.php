@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Projects\Resources\Forms\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -34,6 +35,9 @@ class FormsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+            ])
+            ->headerActions([
+                CreateAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

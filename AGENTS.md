@@ -100,6 +100,7 @@ This block is the single source of truth for cross-skill process rules.
 - You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
+- **Always use Filament components in Filament panels.** Never use raw HTML inputs, selects, toggles, or other form elements inside Filament panel views. Always use Filament's schema system (`Filament\Forms\Components\*`, `Filament\Schemas\Schema`) — even in custom Blade views, sidebars, settings panels, or preview areas. Use `statePath()` for data binding and `afterStateUpdated()` for custom sync logic. Raw HTML will not match Filament's dark mode, spacing, or interaction patterns. The only exception is structural layout (grid containers, flex wrappers) — never for form inputs.
 
 ## Verification Scripts
 

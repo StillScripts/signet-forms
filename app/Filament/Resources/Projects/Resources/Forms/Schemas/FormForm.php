@@ -21,7 +21,8 @@ class FormForm
                     ->rows(3),
                 Toggle::make('is_published')
                     ->label('Published')
-                    ->helperText('Published forms can accept submissions.'),
+                    ->helperText('Published forms can accept submissions.')
+                    ->hiddenOn('create'),
             ]);
     }
 }
