@@ -2,20 +2,18 @@
 
 namespace App\Models;
 
-use Database\Factories\ProjectFactory;
-use Filament\Facades\Filament;
+use Database\Factories\FormFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-#[Fillable(['team_id', 'name', 'slug', 'description', 'url'])]
-class Project extends Model
+#[Fillable(['project_id', 'name', 'slug', 'description', 'fields', 'is_published'])]
+class Form extends Model
 {
-    /** @use HasFactory<ProjectFactory> */
+    /** @use HasFactory<FormFactory> */
     use HasFactory, SoftDeletes;
 
     /**
@@ -25,32 +23,32 @@ class Project extends Model
     {
         parent::boot();
 
-        static::creating(function (Project $project) {
-            if (empty($project->slug)) {
-                $teamId = $project->team_id ?? Filament::getTenant()?->getKey();
+        static::creating(function (Form $form) {
+            if (empty($form->slug)) {
+                $projectId = $form->project_id;
 
-                if ($teamId) {
-                    $project->slug = static::generateUniqueSlug($project->name, $teamId);
+                if ($projectId) {
+                    $form->slug = static::generateUniqueSlug($form->name, $projectId);
                 }
             }
         });
 
-        static::updating(function (Project $project) {
-            if ($project->isDirty('name')) {
-                $project->slug = static::generateUniqueSlug($project->name, $project->team_id, $project->id);
+        static::updating(function (Form $form) {
+            if ($form->isDirty('name')) {
+                $form->slug = static::generateUniqueSlug($form->name, $form->project_id, $form->id);
             }
         });
     }
 
     /**
-     * Generate a unique slug for the project within its team.
+     * Generate a unique slug for the form within its project.
      */
-    protected static function generateUniqueSlug(string $name, int $teamId, ?int $excludeId = null): string
+    protected static function generateUniqueSlug(string $name, int $projectId, ?int $excludeId = null): string
     {
         $defaultSlug = Str::slug($name);
 
         $query = static::withTrashed()
-            ->where('team_id', $teamId)
+            ->where('project_id', $projectId)
             ->where(function ($query) use ($defaultSlug) {
                 $query->where('slug', $defaultSlug)
                     ->orWhere('slug', 'like', $defaultSlug.'-%');
@@ -81,23 +79,26 @@ class Project extends Model
     }
 
     /**
-     * Get the team that owns the project.
+     * Get the project that owns the form.
      *
-     * @return BelongsTo<Team, $this>
+     * @return BelongsTo<Project, $this>
      */
-    public function team(): BelongsTo
+    public function project(): BelongsTo
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsTo(Project::class);
     }
 
     /**
-     * Get all forms for this project.
+     * Get the attributes that should be cast.
      *
-     * @return HasMany<Form, $this>
+     * @return array<string, string>
      */
-    public function forms(): HasMany
+    protected function casts(): array
     {
-        return $this->hasMany(Form::class);
+        return [
+            'fields' => 'array',
+            'is_published' => 'boolean',
+        ];
     }
 
     /**

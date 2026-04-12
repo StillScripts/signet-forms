@@ -32,6 +32,9 @@ enum TeamRole: string
                 TeamPermission::CreateProject,
                 TeamPermission::UpdateProject,
                 TeamPermission::DeleteProject,
+                TeamPermission::CreateForm,
+                TeamPermission::UpdateForm,
+                TeamPermission::DeleteForm,
             ],
             self::Member => [],
         };
