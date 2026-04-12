@@ -15,6 +15,7 @@ abstract class TestCase extends BaseTestCase
     protected function setUpFilamentPanel(?Team $tenant = null): void
     {
         $panel = Filament::getPanel('admin');
+        $panel->boot();
         Filament::setCurrentPanel($panel);
 
         if ($tenant) {
