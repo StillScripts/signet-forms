@@ -8,6 +8,15 @@ user-invocable: false
 
 Tasks are tracked in a simple `TASKS.md` file that both you and the user can edit.
 
+## Task Key Requirement
+
+Every task must have a unique key in this format:
+
+- `TASK-<number>` (for example: `TASK-1`, `TASK-42`, `TASK-105`)
+- Prefix is always uppercase `TASK-`
+- Number is a positive integer with no leading zeros required
+- Never reuse old keys, even for completed/removed tasks
+
 ## File Location
 
 **Always use `TASKS.md` in the current working directory.**
@@ -37,18 +46,31 @@ When creating a new TASKS.md, use this exact template (without example tasks):
 # Tasks
 
 ## Active
+- [ ] **[TASK-1] Task title** - context, for whom, due date
 
 ## Waiting On
+- [ ] **[TASK-2] Task title** - waiting on X since YYYY-MM-DD
 
 ## Someday
+- [ ] **[TASK-3] Task title** - optional context
 
 ## Done
+- [x] ~~[TASK-4] Completed task title~~ (YYYY-MM-DD)
 ```
 
 Task format:
-- `- [ ] **Task title** - context, for whom, due date`
+- `- [ ] **[TASK-123] Task title** - context, for whom, due date`
 - Sub-bullets for additional details
-- Completed: `- [x] ~~Task~~ (date)`
+- Completed: `- [x] ~~[TASK-123] Task title~~ (YYYY-MM-DD)`
+
+### Key Allocation Rules
+
+When adding a task:
+
+1. Scan all sections (`Active`, `Waiting On`, `Someday`, `Done`) for existing `TASK-<number>` keys.
+2. Pick the next available integer (`max + 1`).
+3. Assign that key to the new task.
+4. Preserve the key forever when moving between sections.
 
 ## How to Interact
 
@@ -58,14 +80,15 @@ Task format:
 - Highlight anything overdue or urgent
 
 **When user says "add a task" / "remind me to":**
-- Add to Active section with `- [ ] **Task**` format
+- Generate the next key using Key Allocation Rules
+- Add to Active section with `- [ ] **[TASK-<n>] Task**` format
 - Include context if provided (who it's for, due date)
 
 **When user says "done with X" / "finished X":**
-- Find the task
+- Find the task (prefer matching by key if provided)
 - Change `[ ]` to `[x]`
-- Add strikethrough: `~~task~~`
-- Add completion date
+- Add strikethrough while preserving key: `~~[TASK-<n>] Task~~`
+- Add completion date as `YYYY-MM-DD`
 - Move to Done section
 
 **When user asks "what am I waiting on":**
@@ -75,11 +98,13 @@ Task format:
 ## Conventions
 
 - **Bold** the task title for scannability
+- Keep task key at the start of the title: `**[TASK-<n>] Title**`
 - Include "for [person]" when it's a commitment to someone
 - Include "due [date]" for deadlines
 - Include "since [date]" for waiting items
 - Sub-bullets for additional context
 - Keep Done section for ~1 week, then clear old items
+- If a user references a task by key, always use that key for all follow-up actions
 
 ## Extracting Tasks
 
