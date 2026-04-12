@@ -1,5 +1,5 @@
 ---
-name: checkout
+name: create-branch
 description: Create a new git branch with proper naming conventions. Use whenever starting work on a new task, feature, or bugfix. Handles pulling latest from the correct base branch, creating the branch with the right prefix, and running setup commands so the environment is ready to go.
 ---
 

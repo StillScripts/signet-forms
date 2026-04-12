@@ -43,7 +43,7 @@ Task key format and allocation rules are defined in `/task-management` and must 
 
 ### Phase 2: Set Up the Branch
 
-Use the `/checkout` skill with the task key. This handles:
+Use the `/create-branch` skill with the task key. This handles:
 
 - Classifying the branch type (`feat`, `fix`, `ref`, `chore`, etc.)
 - Pulling latest from the correct base branch (`develop` for most types, `main` for urgent production fixes)
