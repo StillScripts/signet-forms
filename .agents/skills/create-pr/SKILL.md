@@ -7,64 +7,181 @@ description: Create a pull request with a comprehensive description targeting th
 
 Push the current branch and create a pull request with a well-structured description.
 
+## Prerequisites
+
+Before creating a PR, ensure all changes are committed. If there are uncommitted changes, run the `/commit` skill first.
+
+```bash
+git status --porcelain
+```
+
+If the output shows uncommitted changes, invoke `/commit` before proceeding.
+
 ## Process
 
-1. **Verify the branch is clean:**
-   ```bash
-   git status
-   ```
-   If there are uncommitted changes, ask the user whether to commit them first (using the `/commit` skill) or proceed without them.
+### Step 1: Verify Branch State
 
-2. **Determine the target branch:**
-   - `feature/*` branches → target `develop`
-   - `hotfix/*` branches → target `main`
+```bash
+git status
+git log <base-branch>..HEAD --oneline
+```
 
-3. **Push the branch:**
-   ```bash
-   git push -u origin HEAD
-   ```
+Determine the target branch from the branch prefix:
 
-4. **Analyze the changes** to write the PR description:
-   ```bash
-   git log develop..HEAD --oneline
-   git diff develop...HEAD --stat
-   ```
-   (Use `main` instead of `develop` for hotfix branches.)
+| Branch prefix | Target |
+|---------------|--------|
+| `fix/` on `main` | `main` (production hotfixes only) |
+| Everything else (`feat/`, `fix/`, `ref/`, `chore/`, `perf/`, `style/`, `docs/`, `test/`, `ci/`, `build/`, `meta/`, `license/`) | `develop` |
 
-5. **Create the PR:**
-   ```bash
-   gh pr create --base develop --title "[TASK-42] Add team role management" --body "$(cat <<'EOF'
-   ## What does this do?
+Ensure:
+- All changes are committed
+- Branch is up to date with remote
+- Changes are rebased on the base branch if needed
 
-   [2-3 sentence summary of the changes and why they were made]
+### Step 2: Analyze Changes
 
-   ## How to test
+Review what will be included in the PR:
 
-   - [ ] Step-by-step instructions for manual testing
-   - [ ] Note any specific test data or setup needed
+```bash
+# See all commits that will be in the PR
+git log <base-branch>..HEAD
 
-   ## Changes
+# See the full diff
+git diff <base-branch>...HEAD
+```
 
-   - List of key files/areas modified
-   - Any new models, migrations, or routes added
+Read the actual diff to write the description — don't guess what changed. Understand the scope and purpose of all changes before writing.
 
-   ## Task
+### Step 3: Push the Branch
 
-   TASK-42
-   EOF
-   )"
-   ```
+```bash
+git push -u origin HEAD
+```
+
+### Step 4: Write the PR Description
+
+Structure the description as:
+
+```markdown
+<brief description of what the PR does>
+
+<why these changes are being made — the motivation>
+
+<alternative approaches considered, if any>
+
+<any additional context reviewers need>
+
+TASK-42
+```
+
+**Do include:**
+- Clear explanation of what and why
+- The task key for traceability
+- Context that isn't obvious from the code
+- Notes on specific areas that need careful review
+
+**Do NOT include:**
+- "Test plan" sections or checkbox lists of manual testing steps
+- Redundant summaries of the diff (reviewers can read the code)
+
+### Step 5: Create the PR
+
+Create as a draft PR so CI can run before requesting review:
+
+```bash
+gh pr create --draft --base develop --title "<type>(scope): Description — TASK-42" --body "$(cat <<'EOF'
+<description body here>
+
+TASK-42
+EOF
+)"
+```
+
+(Use `--base main` for production hotfix branches.)
 
 ## PR Title Format
 
-`[TASK-<number>] Imperative description` — mirrors the commit message format.
+`<type>(scope): Description — TASK-<number>`
+
+The type prefix should match the branch type:
+
+- `feat(teams): Add role management — TASK-42`
+- `fix(auth): Handle null user on login redirect — TASK-15`
+- `ref(notifications): Extract to shared service — TASK-30`
+- `chore(ci): Update PHP matrix to 8.4 — TASK-51`
+- `docs(api): Add endpoint documentation — TASK-60`
 
 Task key format comes from `/task-management` and is the source of truth.
 
-If the branch has a single commit, use that commit's subject line as the PR title. For multi-commit branches, write a title that summarises the overall change.
+If the branch has a single commit, use that commit's subject line (with the type prefix) as the PR title. For multi-commit branches, write a title that summarises the overall change.
+
+## PR Description Examples
+
+### Feature PR
+
+```markdown
+Add Slack notifications for team invitation events
+
+When a team member is invited, accepted, or removed, we now send
+notifications to the team's configured Slack channel. This keeps team
+admins informed without checking the app.
+
+Previously considered email-only notifications, but Slack threading
+gives better visibility for teams that are already active there.
+
+TASK-42
+```
+
+### Bug Fix PR
+
+```markdown
+Handle null user in team settings membership query
+
+The team settings page could crash when a membership record referenced
+a soft-deleted user, causing a 500 on the members table. This adds
+proper null handling and filters out orphaned memberships.
+
+Found while investigating TASK-15.
+
+TASK-15
+```
+
+### Refactor PR
+
+```markdown
+Extract team permission checks into dedicated policy methods
+
+Moves inline Gate checks from TeamSettings into named policy methods.
+No behavior change — same authorization logic, better testability.
+
+Prepares for TASK-30 which adds granular permission management.
+
+TASK-30
+```
+
+## Editing Existing PRs
+
+Use `gh api` to update PRs after creation:
+
+```bash
+# Update PR description
+gh api -X PATCH repos/{owner}/{repo}/pulls/PR_NUMBER -f body="$(cat <<'EOF'
+Updated description here
+EOF
+)"
+
+# Update PR title
+gh api -X PATCH repos/{owner}/{repo}/pulls/PR_NUMBER -f title='feat(scope): New title — TASK-42'
+
+# Update both
+gh api -X PATCH repos/{owner}/{repo}/pulls/PR_NUMBER \
+  -f title='feat(scope): New title — TASK-42' \
+  -f body='New description'
+```
 
 ## Notes
 
 - If the user hasn't run `/lint` yet, suggest it before creating the PR — Pint failures will block CI.
 - Always include the task key in both the title and body so it's easy to trace back.
-- Read the actual diff to write the description — don't guess what changed.
+- One PR per task — don't bundle unrelated changes.
+- Smaller PRs get faster, better reviews. If the diff is large, consider whether it can be split.
