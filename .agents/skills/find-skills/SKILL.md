@@ -93,15 +93,26 @@ npx skills add vercel-labs/agent-skills@react-best-practices
 Learn more: https://skills.sh/vercel-labs/agent-skills/react-best-practices
 ```
 
-### Step 6: Offer to Install
+### Step 6: Install Into This Project
 
-If the user wants to proceed, you can install the skill for them:
+**CRITICAL: This project only uses `.agents/skills/` (source of truth), `.claude/skills/` and `.cursor/skills/` (symlinks). Never install skills that create directories for other agent tools.**
 
+When installing a skill, you MUST manually install it to avoid the CLI creating unwanted directories:
+
+1. **Clone/download the skill content** into `.agents/skills/<skill-name>/`
+2. **Create symlinks** for `.claude` and `.cursor`:
+   ```bash
+   ln -s ../../.agents/skills/<skill-name> .claude/skills/<skill-name>
+   ln -s ../../.agents/skills/<skill-name> .cursor/skills/<skill-name>
+   ```
+
+**Do NOT use `npx skills add`** directly — it creates symlink directories for 20+ other agent tools (`.codebuddy`, `.goose`, `.kiro`, `.windsurf`, `skills/`, etc.) that pollute the repo. If you accidentally run it, immediately delete everything except `.agents/`, `.claude/`, and `.cursor/`.
+
+If you must use the CLI to fetch content, run it and then immediately clean up:
 ```bash
-npx skills add <owner/repo@skill> -g -y
+# After npx skills add, delete all unwanted directories:
+rm -rf .codebuddy .commandcode .continue .crush .factory .goose .junie .kilocode .kiro .kode .mcpjam .mux .neovate .openhands .pi .pochi .qoder .qwen .roo .trae .windsurf .zencoder skills
 ```
-
-The `-g` flag installs globally (user-level) and `-y` skips confirmation prompts.
 
 ## Common Skill Categories
 

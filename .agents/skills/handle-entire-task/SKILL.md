@@ -138,6 +138,8 @@ Use the `/commit` skill to create a properly formatted commit:
 - Optional body explaining what and why
 - AI attribution that matches the active tool/agent
 
+# NOTE - Stop here because we haven't make a remote yet, I'll do local reviews and merges!!!
+
 ### Phase 10: Create PR
 
 Use the `/create-pr` skill to:

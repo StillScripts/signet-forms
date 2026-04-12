@@ -28,9 +28,10 @@ This application is a Laravel application and its main Laravel ecosystems packag
 ## Skill Storage & Sync
 
 - Store all project skills in `.agents/skills` as the source of truth.
-- Mirror each skill into `.claude/skills` using symlinks, not duplicated directories.
-- When adding a skill, create it in `.agents/skills/<skill-name>` first, then link it from `.claude/skills/<skill-name>`.
+- Mirror each skill into `.claude/skills` and `.cursor/skills` using symlinks, not duplicated directories.
+- When adding a skill, create it in `.agents/skills/<skill-name>` first, then symlink it from `.claude/skills/<skill-name>` and `.cursor/skills/<skill-name>`.
 - Keep `CLAUDE.md` as a symlink to `AGENTS.md` so both entry points stay in sync.
+- **Only three skill directories are permitted in this repo: `.agents/skills/` (source), `.claude/skills/` (symlink), `.cursor/skills/` (symlink).** Never create directories for other agent tools (`.codebuddy`, `.goose`, `.kiro`, `.windsurf`, `skills/`, etc.). If `npx skills add` creates them, delete them immediately. See `.agents/skills/find-skills/SKILL.md` for the safe installation process.
 
 ## Task & Memory Management
 
@@ -49,10 +50,23 @@ This project has domain-specific skills available. You MUST activate the relevan
 - `pest-testing` — Use this skill for Pest PHP testing in Laravel projects only. Trigger whenever any test is being written, edited, fixed, or refactored — including fixing tests that broke after a code change, adding assertions, converting PHPUnit to Pest, adding datasets, and TDD workflows. Always activate when the user asks how to write something in Pest, mentions test files or directories (tests/Feature, tests/Unit, tests/Browser), or needs browser testing, smoke testing multiple pages for JS errors, or architecture tests. Covers: test()/it()/expect() syntax, datasets, mocking, browser testing (visit/click/fill), smoke testing, arch(), Livewire component tests, RefreshDatabase, and all Pest 4 features. Do not use for factories, seeders, migrations, controllers, models, or non-test PHP code.
 - `tailwindcss-development` — Always invoke when the user's message includes 'tailwind' in any form. Also invoke for: building responsive grid layouts (multi-column card grids, product grids), flex/grid page structures (dashboards with sidebars, fixed topbars, mobile-toggle navs), styling UI components (cards, tables, navbars, pricing sections, forms, inputs, badges), adding dark mode variants, fixing spacing or typography, and Tailwind v3/v4 work. The core use case: writing or fixing Tailwind utility classes in HTML templates (Blade, JSX, Vue). Skip for backend PHP logic, database queries, API routes, JavaScript with no HTML/CSS component, CSS file audits, build tool configuration, and vanilla CSS.
 
+## Documentation & Planning Skills
+
+This project uses structured documentation to ensure every feature has a clear spec with reasoning. These docs will eventually power a doc site.
+
+- `product-brainstorming` — Use when exploring a new feature idea, problem space, or product direction. Acts as a thinking partner that challenges assumptions and pushes ideas further. Activate when the user wants to brainstorm, explore problems, ideate solutions, or stress-test assumptions before writing a spec.
+- `write-spec` — Use when a feature needs a formal specification or PRD. Produces structured docs with problem statement, goals, non-goals, user stories, prioritized requirements, success metrics, and open questions. Activate after brainstorming converges on a direction, or when the user says "write a spec" or "create a PRD".
+- `doc-coauthoring` — Use for collaboratively authoring any substantial document (specs, proposals, decision docs, RFCs). Provides a three-stage workflow: Context Gathering, Refinement & Structure, and Reader Testing. Activate when the user wants to co-write a document or refine an existing spec.
+
+Feature specs live in `docs/specs/` and follow the naming convention `TASK-<number>-slug.md`. Every feature task should produce a spec before implementation begins.
+
 ## Workflow Skills
 
 Use the workflow skill that matches the stage of work so behavior stays consistent:
 
+- `/product-brainstorming` when exploring a new feature or problem space
+- `/write-spec` when turning a brainstormed idea into a formal spec
+- `/doc-coauthoring` when co-writing or refining any substantial document
 - `/create-branch` when starting a task branch
 - `/lint` before commits and PR creation
 - `/deslop` to clean AI-generated artifacts
