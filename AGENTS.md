@@ -32,6 +32,13 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - When adding a skill, create it in `.agents/skills/<skill-name>` first, then link it from `.claude/skills/<skill-name>`.
 - Keep `CLAUDE.md` as a symlink to `AGENTS.md` so both entry points stay in sync.
 
+## Task & Memory Management
+
+This project uses two built-in skills for developer productivity:
+
+- **Task Management** (`.claude/skills/task-management`) — All tasks are tracked in a shared `TASKS.md` file. Use this skill when the user asks about their tasks, wants to add/complete tasks, or needs help tracking commitments. See the skill for format conventions and interaction patterns.
+- **Memory Management** (`.claude/skills/memory-management`) — Each developer maintains a personal local memory in the `memory/` directory. This directory is `.gitignored` (except for directory structure and README files) because memories are personal to each developer, not shared across the team. Use this skill to decode shorthand, remember people/projects/terms, and build up context that makes Claude a true workplace collaborator. See the skill for the two-tier architecture (CLAUDE.md hot cache + memory/ deep storage).
+
 ## Skills Activation
 
 This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
