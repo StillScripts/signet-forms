@@ -53,6 +53,30 @@ Then classify the file by what it touches:
 
 ### Laravel-Specific
 
+Before checking Laravel code, read the relevant rules from the `laravel-best-practices` skill at `.agents/skills/laravel-best-practices/rules/`. Key rule files to consult based on what changed:
+
+| Changes touch | Read rule file |
+|---------------|---------------|
+| Models, relationships, scopes | `eloquent.md` |
+| Database queries, joins, subqueries | `advanced-queries.md`, `db-performance.md` |
+| Migrations | `migrations.md` |
+| Controllers, routes | `routing.md`, `architecture.md` |
+| Form validation | `validation.md` |
+| Authorization, auth guards | `security.md` |
+| Blade templates | `blade-views.md` |
+| Caching | `caching.md` |
+| Jobs, queues | `queue-jobs.md` |
+| Events, notifications | `events-notifications.md` |
+| Error handling | `error-handling.md` |
+| HTTP client usage | `http-client.md` |
+| Scheduled commands | `scheduling.md` |
+| Config or environment | `config.md` |
+| Collections | `collections.md` |
+| Tests | `testing.md` |
+| Code style | `style.md` |
+
+Flag deviations from those rules. Additionally, always check for:
+
 - [ ] **Mass assignment**: Are `$fillable` or `$guarded` correctly set? Any `Model::create($request->all())`?
 - [ ] **N+1 queries**: New relationships or loops loading related models without eager loading?
 - [ ] **Missing indexes**: Columns used in `where`/`orderBy` clauses without indexes?
