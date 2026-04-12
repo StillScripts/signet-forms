@@ -45,9 +45,9 @@ Task key format and allocation rules are defined in `/task-management` and must 
 
 Use the `/checkout` skill with the task key. This handles:
 
-- Determining feature vs hotfix branch type
-- Pulling latest from the correct base branch (`develop` for features, `main` for hotfixes)
-- Creating the branch with proper naming (`feature/TASK-42-slug`)
+- Classifying the branch type (`feat`, `fix`, `ref`, `chore`, etc.)
+- Pulling latest from the correct base branch (`develop` for most types, `main` for urgent production fixes)
+- Creating the branch with proper naming (`feat/TASK-42-slug`)
 - Running `composer install`, `npm install`, `php artisan migrate`
 
 ### Phase 3: Investigate the Codebase
@@ -184,7 +184,7 @@ User: /handle-entire-task TASK-42
 
 Claude reads the task from TASKS.md, summarises it, gets confirmation, then autonomously:
 
-1. Checks out `feature/TASK-42-add-team-role-management`
+1. Checks out `feat/TASK-42-add-team-role-management`
 2. Activates `/laravel-best-practices` and searches docs for role/permission patterns
 3. Finds Team model, Membership model, TeamRole enum, and TeamSettings page
 4. Implements role assignment with permission checks
