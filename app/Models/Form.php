@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\ValueObjects\FormSettings;
 use Database\Factories\FormFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-#[Fillable(['project_id', 'name', 'slug', 'description', 'schema', 'is_published', 'success_heading', 'success_message'])]
+#[Fillable(['project_id', 'name', 'slug', 'description', 'schema', 'settings', 'is_published'])]
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
@@ -120,6 +121,7 @@ class Form extends Model
     {
         return [
             'schema' => 'array',
+            'settings' => FormSettings::class,
             'is_published' => 'boolean',
         ];
     }

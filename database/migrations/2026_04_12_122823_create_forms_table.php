@@ -18,8 +18,7 @@ return new class extends Migration
             $table->string('slug');
             $table->text('description')->nullable();
             $table->json('schema')->nullable();
-            $table->string('success_heading')->nullable();
-            $table->text('success_message')->nullable();
+            $table->json('settings')->nullable();
             $table->boolean('is_published')->default(false);
             $table->timestamps();
             $table->softDeletes();

@@ -27,6 +27,7 @@ class FormFactory extends Factory
             'slug' => Str::slug($name),
             'description' => fake()->optional()->sentence(),
             'schema' => null,
+            'settings' => null,
             'is_published' => false,
         ];
     }

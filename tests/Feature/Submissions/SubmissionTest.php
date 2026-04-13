@@ -6,6 +6,8 @@ use App\Models\Form;
 use App\Models\Submission;
 use App\Models\Team;
 use App\Models\User;
+use App\ValueObjects\FormSettings;
+use App\ValueObjects\Settings\ConfirmationSettings;
 
 test('submission belongs to a form', function () {
     $form = Form::factory()->create();
@@ -85,20 +87,27 @@ test('viewers cannot delete submissions', function () {
     expect($user->hasTeamPermission($team, TeamPermission::DeleteSubmission))->toBeFalse();
 });
 
-test('form has success heading and message fields', function () {
+test('form has settings with custom confirmation', function () {
     $form = Form::factory()->create([
-        'success_heading' => 'Thanks!',
-        'success_message' => 'We received your response.',
+        'settings' => new FormSettings(
+            confirmation: new ConfirmationSettings(
+                heading: 'Thanks!',
+                message: 'We received your response.',
+            ),
+        ),
     ]);
 
     $fresh = $form->fresh();
-    expect($fresh->success_heading)->toBe('Thanks!')
-        ->and($fresh->success_message)->toBe('We received your response.');
+    expect($fresh->settings)->toBeInstanceOf(FormSettings::class)
+        ->and($fresh->settings->confirmation->heading)->toBe('Thanks!')
+        ->and($fresh->settings->confirmation->message)->toBe('We received your response.');
 });
 
-test('success fields default to null', function () {
+test('settings default to sensible values when null', function () {
     $form = Form::factory()->create();
 
-    expect($form->fresh()->success_heading)->toBeNull()
-        ->and($form->fresh()->success_message)->toBeNull();
+    $settings = $form->fresh()->settings;
+    expect($settings)->toBeInstanceOf(FormSettings::class)
+        ->and($settings->confirmation->heading)->toBe('Thank you!')
+        ->and($settings->confirmation->message)->toBe('Your response has been recorded.');
 });

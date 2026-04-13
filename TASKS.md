@@ -10,7 +10,7 @@
 
 
 - [ ] **[TASK-12] Expand RBAC to five roles** - Add Editor, Reviewer, and Viewer roles to the TeamRole enum alongside existing Owner, Admin, Member (renamed from Member). Implement the full permission matrix from Architecture Doc Section 4.2 covering form management, submission access, team management, workspace settings, billing, audit trail, and integrations.
-- [ ] **[TASK-13] Add unified form settings JSONB column** - Replace flat form columns (success_heading, success_message) with a structured `settings` JSONB column. Sections: behaviour (submission limits, close date, multiple submissions, save and resume, CAPTCHA), confirmation (post-submit message/redirect, respondent copy), compliance (applicable standards, retention, residency, consent, encryption), branding (logo, colours, fonts, custom CSS). Migrate existing data.
+
 - [ ] **[TASK-14] Add submission metadata and status workflow** - Extend Submission model with: metadata JSONB (IP, user agent, device, time_to_complete, referrer), form_version integer, status enum (pending, in_review, approved, rejected, archived), assigned_reviewer_id, respondent_email, respondent_name. Add status transition UI in admin panel.
 - [ ] **[TASK-15] Audit logging** - Create append-only `audit_logs` table (resource_type, resource_id, action, actor, IP, details JSONB). Build AuditService and queued WriteAuditLog job. Log: form CRUD, publish/unpublish, submission view/status change/export/delete, team member changes, settings changes, login events. Add read-only Filament page for browsing audit trail.
 
@@ -71,6 +71,7 @@
 
 ## Done
 
+- [x] **[TASK-13] Add unified form settings JSONB column** - Replace flat form columns (success_heading, success_message) with a structured `settings` JSONB column with four sections (behaviour, confirmation, compliance, branding). FormSettings value object with Castable/Wireable interfaces. Tabbed settings UI in Filament. 5 unit tests, all 230 tests pass.
 - [x] **[TASK-11] Migrate to UUID primary keys** - Convert all tables to UUIDv7 via HasUuids trait. Consolidate incremental migrations into create-table migrations. Add DatabaseSeeder with test user, two teams, projects, forms, and submissions. All 192 tests pass.
 - [x] **[TASK-10] Review and comply with technical specifications** - Create a comprehensive task list in TASKS.md based on the FormForge Technical Architecture v1.0 document. Map existing work to the architecture, identify gaps, and plan future tasks with proper sequencing. Added 35 new tasks across 8 categories. Added Workspaces rename note to Team model.
 - [x] **[TASK-9] Form submissions with public renderer** - Add a Submission model (JSONB data column, one record per form response). Build a public-facing form renderer page at `/forms/{team}/{form}` using Filament components. Add submissions sidebar navigation, per-form submission viewing, and customisable success page. 30 tests.

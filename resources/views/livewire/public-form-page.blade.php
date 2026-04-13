@@ -8,10 +8,10 @@
                 />
             </div>
             <h2 class="text-xl font-semibold text-gray-950 dark:text-white">
-                {{ $formRecord->success_heading ?? 'Thank you!' }}
+                {{ $formRecord->settings->confirmation->heading }}
             </h2>
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                {{ $formRecord->success_message ?? 'Your response has been recorded.' }}
+                {{ $formRecord->settings->confirmation->message }}
             </p>
         </div>
     @else

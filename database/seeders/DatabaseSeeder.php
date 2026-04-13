@@ -10,6 +10,8 @@ use App\Models\Project;
 use App\Models\Submission;
 use App\Models\Team;
 use App\Models\User;
+use App\ValueObjects\FormSettings;
+use App\ValueObjects\Settings\ConfirmationSettings;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -58,7 +60,12 @@ class DatabaseSeeder extends Seeder
             $this->field('text-input', 'name', ['label' => 'Full Name', 'is_required' => true]),
             $this->field('text-input', 'email', ['label' => 'Email Address', 'is_required' => true, 'placeholder' => 'you@example.com']),
             $this->field('textarea', 'message', ['label' => 'Message', 'is_required' => true, 'column_span' => 2]),
-        ], published: true, successHeading: 'Thanks for reaching out!', successMessage: 'We\'ll get back to you within 24 hours.');
+        ], published: true, settings: new FormSettings(
+            confirmation: new ConfirmationSettings(
+                heading: 'Thanks for reaching out!',
+                message: 'We\'ll get back to you within 24 hours.',
+            ),
+        ));
 
         $feedbackForm = $this->createForm($websiteProject, 'Feedback Survey', [
             $this->field('text-input', 'name', ['label' => 'Your Name']),
@@ -81,7 +88,12 @@ class DatabaseSeeder extends Seeder
                 ['label' => 'Student', 'value' => 'student'],
             ]]),
             $this->field('checkbox', 'terms', ['label' => 'I agree to the terms and conditions', 'is_required' => true]),
-        ], published: true, successHeading: 'You\'re registered!', successMessage: 'Check your email for confirmation details.');
+        ], published: true, settings: new FormSettings(
+            confirmation: new ConfirmationSettings(
+                heading: 'You\'re registered!',
+                message: 'Check your email for confirmation details.',
+            ),
+        ));
 
         // Sample submissions for the contact form
         Submission::factory()->create(['form_id' => $contactForm->id, 'data' => ['name' => 'Jane Smith', 'email' => 'jane@example.com', 'message' => 'I love your product!']]);
@@ -114,8 +126,7 @@ class DatabaseSeeder extends Seeder
         string $name,
         array $fields,
         bool $published = false,
-        ?string $successHeading = null,
-        ?string $successMessage = null,
+        ?FormSettings $settings = null,
     ): Form {
         $schema = ['pages' => [[
             'id' => fake()->uuid(),
@@ -131,8 +142,7 @@ class DatabaseSeeder extends Seeder
             'name' => $name,
             'schema' => $schema,
             'is_published' => $published,
-            'success_heading' => $successHeading,
-            'success_message' => $successMessage,
+            'settings' => $settings,
         ]);
 
         FormVersion::factory()->create([

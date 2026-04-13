@@ -6,6 +6,8 @@ use App\Models\Form;
 use App\Models\Project;
 use App\Models\Submission;
 use App\Models\Team;
+use App\ValueObjects\FormSettings;
+use App\ValueObjects\Settings\ConfirmationSettings;
 use Livewire\Livewire;
 
 function makePublicSchema(array $fields = [], ?string $title = null): array
@@ -169,8 +171,12 @@ test('success page shows default message', function () {
 test('success page shows custom heading and message', function () {
     [$team, , $form] = setUpPublicForm();
     $form->update([
-        'success_heading' => 'All done!',
-        'success_message' => 'We will get back to you soon.',
+        'settings' => new FormSettings(
+            confirmation: new ConfirmationSettings(
+                heading: 'All done!',
+                message: 'We will get back to you soon.',
+            ),
+        ),
     ]);
 
     Livewire::test(PublicFormPage::class, [
