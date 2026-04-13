@@ -90,10 +90,10 @@ test('team name can be updated by owner via edit team profile', function () {
     ]);
 });
 
-test('team settings page can be rendered by member', function () {
+test('team settings page can be rendered by viewer', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     $this->actingAs($user);
 
@@ -217,14 +217,14 @@ test('deleting non current team leaves current team unchanged', function () {
 
 test('deleting team switches other affected users to their personal team', function () {
     $owner = User::factory()->create();
-    $member = User::factory()->create();
+    $viewer = User::factory()->create();
 
     $team = Team::factory()->create();
     $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($viewer, ['role' => TeamRole::Viewer->value]);
 
     $owner->update(['current_team_id' => $team->id]);
-    $member->update(['current_team_id' => $team->id]);
+    $viewer->update(['current_team_id' => $team->id]);
 
     $this->actingAs($owner);
     $this->setUpFilamentPanel($team);
@@ -234,7 +234,7 @@ test('deleting team switches other affected users to their personal team', funct
             'confirmName' => $team->name,
         ]);
 
-    expect($member->fresh()->current_team_id)->toEqual($member->personalTeam()->id);
+    expect($viewer->fresh()->current_team_id)->toEqual($viewer->personalTeam()->id);
 });
 
 test('personal teams cannot be deleted', function () {

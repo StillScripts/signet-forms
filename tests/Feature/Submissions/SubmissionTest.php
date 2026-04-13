@@ -53,10 +53,10 @@ test('admins can view submissions', function () {
     expect($user->hasTeamPermission($team, TeamPermission::ViewSubmission))->toBeTrue();
 });
 
-test('members can view submissions', function () {
+test('viewers can view submissions', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     expect($user->hasTeamPermission($team, TeamPermission::ViewSubmission))->toBeTrue();
 });
@@ -77,10 +77,10 @@ test('admins can delete submissions', function () {
     expect($user->hasTeamPermission($team, TeamPermission::DeleteSubmission))->toBeTrue();
 });
 
-test('members cannot delete submissions', function () {
+test('viewers cannot delete submissions', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     expect($user->hasTeamPermission($team, TeamPermission::DeleteSubmission))->toBeFalse();
 });

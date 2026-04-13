@@ -21,7 +21,14 @@ enum TeamPermission: string
     case CreateForm = 'form:create';
     case UpdateForm = 'form:update';
     case DeleteForm = 'form:delete';
+    case PublishForm = 'form:publish';
 
     case ViewSubmission = 'submission:view';
     case DeleteSubmission = 'submission:delete';
+    case ExportSubmission = 'submission:export';
+    case ReviewSubmission = 'submission:review';
+
+    case ManageBilling = 'billing:manage';
+    case ViewAudit = 'audit:view';
+    case ManageIntegration = 'integration:manage';
 }

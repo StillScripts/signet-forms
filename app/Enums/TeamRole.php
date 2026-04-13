@@ -6,7 +6,9 @@ enum TeamRole: string
 {
     case Owner = 'owner';
     case Admin = 'admin';
-    case Member = 'member';
+    case Editor = 'editor';
+    case Reviewer = 'reviewer';
+    case Viewer = 'viewer';
 
     /**
      * Get the display label for the role.
@@ -14,6 +16,20 @@ enum TeamRole: string
     public function label(): string
     {
         return ucfirst($this->value);
+    }
+
+    /**
+     * Get the description for this role.
+     */
+    public function description(): string
+    {
+        return match ($this) {
+            self::Owner => 'Full access including billing',
+            self::Admin => 'Full access except billing',
+            self::Editor => 'Build and publish forms, view submissions',
+            self::Reviewer => 'Review and act on submissions',
+            self::Viewer => 'Read-only access to submissions',
+        };
     }
 
     /**
@@ -27,6 +43,9 @@ enum TeamRole: string
             self::Owner => TeamPermission::cases(),
             self::Admin => [
                 TeamPermission::UpdateTeam,
+                TeamPermission::AddMember,
+                TeamPermission::UpdateMember,
+                TeamPermission::RemoveMember,
                 TeamPermission::CreateInvitation,
                 TeamPermission::CancelInvitation,
                 TeamPermission::CreateProject,
@@ -35,10 +54,30 @@ enum TeamRole: string
                 TeamPermission::CreateForm,
                 TeamPermission::UpdateForm,
                 TeamPermission::DeleteForm,
+                TeamPermission::PublishForm,
                 TeamPermission::ViewSubmission,
                 TeamPermission::DeleteSubmission,
+                TeamPermission::ExportSubmission,
+                TeamPermission::ReviewSubmission,
+                TeamPermission::ViewAudit,
+                TeamPermission::ManageIntegration,
             ],
-            self::Member => [
+            self::Editor => [
+                TeamPermission::CreateProject,
+                TeamPermission::UpdateProject,
+                TeamPermission::CreateForm,
+                TeamPermission::UpdateForm,
+                TeamPermission::PublishForm,
+                TeamPermission::ViewSubmission,
+                TeamPermission::ExportSubmission,
+                TeamPermission::ReviewSubmission,
+                TeamPermission::ManageIntegration,
+            ],
+            self::Reviewer => [
+                TeamPermission::ViewSubmission,
+                TeamPermission::ReviewSubmission,
+            ],
+            self::Viewer => [
                 TeamPermission::ViewSubmission,
             ],
         };
@@ -59,9 +98,11 @@ enum TeamRole: string
     public function level(): int
     {
         return match ($this) {
-            self::Owner => 3,
-            self::Admin => 2,
-            self::Member => 1,
+            self::Owner => 5,
+            self::Admin => 4,
+            self::Editor => 3,
+            self::Reviewer => 2,
+            self::Viewer => 1,
         };
     }
 

@@ -21,23 +21,23 @@ test('team invitations can be created via team settings invite action', function
     Livewire::test(TeamSettings::class)
         ->callTableAction('invite', data: [
             'email' => 'invited@example.com',
-            'role' => TeamRole::Member->value,
+            'role' => TeamRole::Editor->value,
         ]);
 
     $this->assertDatabaseHas('team_invitations', [
         'team_id' => $team->id,
         'email' => 'invited@example.com',
-        'role' => TeamRole::Member->value,
+        'role' => TeamRole::Editor->value,
     ]);
 });
 
-test('team invitations cannot be created by regular members', function () {
+test('team invitations cannot be created by editors', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $team = Team::factory()->create();
 
     $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
-    $team->members()->attach($member, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($member, ['role' => TeamRole::Editor->value]);
 
     $this->actingAs($member);
     $this->setUpFilamentPanel($team);
@@ -77,7 +77,7 @@ test('team invitations can be accepted via controller', function () {
     $invitation = TeamInvitation::factory()->create([
         'team_id' => $team->id,
         'email' => 'invited@example.com',
-        'role' => TeamRole::Member,
+        'role' => TeamRole::Editor,
         'invited_by' => $owner->id,
     ]);
 

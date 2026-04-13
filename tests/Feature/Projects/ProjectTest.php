@@ -96,7 +96,7 @@ test('project slug updates when name changes', function () {
 test('team members can view projects', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     $project = Project::factory()->create(['team_id' => $team->id]);
 
@@ -119,18 +119,18 @@ test('admins can create projects', function () {
     expect($user->hasTeamPermission($team, TeamPermission::CreateProject))->toBeTrue();
 });
 
-test('members cannot create projects', function () {
+test('viewers cannot create projects', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     expect($user->hasTeamPermission($team, TeamPermission::CreateProject))->toBeFalse();
 });
 
-test('members cannot delete projects', function () {
+test('viewers cannot delete projects', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     expect($user->hasTeamPermission($team, TeamPermission::DeleteProject))->toBeFalse();
 });

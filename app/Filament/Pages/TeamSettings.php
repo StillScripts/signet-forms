@@ -79,7 +79,7 @@ class TeamSettings extends Page implements HasTable
                                     ->toArray()
                             )
                             ->required()
-                            ->default(TeamRole::Member->value),
+                            ->default(TeamRole::Editor->value),
                     ])
                     ->action(function (array $data) use ($team): void {
                         $invitation = $team->invitations()->create([

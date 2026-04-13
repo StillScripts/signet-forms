@@ -52,4 +52,12 @@ class FormPolicy
     {
         return $user->hasTeamPermission($form->project->team, TeamPermission::DeleteForm);
     }
+
+    /**
+     * Determine whether the user can publish or unpublish the model.
+     */
+    public function publish(User $user, Form $form): bool
+    {
+        return $user->hasTeamPermission($form->project->team, TeamPermission::PublishForm);
+    }
 }

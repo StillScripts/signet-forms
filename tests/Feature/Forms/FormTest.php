@@ -123,7 +123,7 @@ test('form is_published is cast to boolean', function () {
 test('team members can view forms', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     $project = Project::factory()->create(['team_id' => $team->id]);
     $form = Form::factory()->create(['project_id' => $project->id]);
@@ -147,18 +147,18 @@ test('admins can create forms', function () {
     expect($user->hasTeamPermission($team, TeamPermission::CreateForm))->toBeTrue();
 });
 
-test('members cannot create forms', function () {
+test('viewers cannot create forms', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     expect($user->hasTeamPermission($team, TeamPermission::CreateForm))->toBeFalse();
 });
 
-test('members cannot delete forms', function () {
+test('viewers cannot delete forms', function () {
     $user = User::factory()->create();
     $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Member->value]);
+    $team->members()->attach($user, ['role' => TeamRole::Viewer->value]);
 
     expect($user->hasTeamPermission($team, TeamPermission::DeleteForm))->toBeFalse();
 });
