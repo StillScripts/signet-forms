@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Projects\Resources\Forms\Pages;
 
 use App\Enums\FormFieldType;
 use App\Filament\Resources\Projects\Resources\Forms\FormResource;
+use App\Models\FormVersion;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -46,10 +47,11 @@ class FormBuilderPage extends Page
 
     public int $columns = 2;
 
-    /** @var list<array{fields: list<array<string, mixed>>, selectedFieldKey: ?string}> */
-    public array $history = [];
+    #[Locked]
+    public int $currentVersion = 0;
 
-    public int $historyIndex = -1;
+    #[Locked]
+    public int $latestVersion = 0;
 
     #[Locked]
     public bool $hasUnsavedChanges = false;
@@ -72,12 +74,20 @@ class FormBuilderPage extends Page
     protected function loadFieldsFromRecord(): void
     {
         $record = $this->getRecord();
-        $this->fields = is_array($record->fields) ? $record->fields : [];
+        $version = $record->latestVersion();
+
+        if ($version) {
+            $this->fields = is_array($version->fields) ? $version->fields : [];
+            $this->currentVersion = $version->version;
+            $this->latestVersion = $version->version;
+        } else {
+            $this->fields = is_array($record->fields) ? $record->fields : [];
+            $this->currentVersion = 0;
+            $this->latestVersion = 0;
+        }
+
         $this->selectedFieldKey = null;
         $this->hasUnsavedChanges = false;
-        $this->history = [];
-        $this->historyIndex = -1;
-        $this->pushHistory();
     }
 
     public function addField(string $type): void
@@ -94,7 +104,6 @@ class FormBuilderPage extends Page
         $this->selectedFieldKey = $this->fields[array_key_last($this->fields)]['key'];
         $this->syncSettingsFromField();
         $this->hasUnsavedChanges = true;
-        $this->pushHistory();
     }
 
     public function selectField(?string $key): void
@@ -115,7 +124,6 @@ class FormBuilderPage extends Page
 
         $this->reindexSort();
         $this->hasUnsavedChanges = true;
-        $this->pushHistory();
     }
 
     public function updateFieldData(string $key, string $property, mixed $value): void
@@ -133,7 +141,6 @@ class FormBuilderPage extends Page
         }
 
         $this->hasUnsavedChanges = true;
-        $this->pushHistory();
     }
 
     public function updateFieldKey(string $oldKey, string $newKey): void
@@ -162,7 +169,6 @@ class FormBuilderPage extends Page
         }
 
         $this->hasUnsavedChanges = true;
-        $this->pushHistory();
     }
 
     public function updateOption(string $fieldKey, int $optionIndex, string $property, string $value): void
@@ -234,7 +240,6 @@ class FormBuilderPage extends Page
         $this->fields = $remaining;
         $this->reindexSort();
         $this->hasUnsavedChanges = true;
-        $this->pushHistory();
     }
 
     public function save(): void
@@ -245,15 +250,26 @@ class FormBuilderPage extends Page
             return $field;
         }, $this->fields);
 
-        $this->getRecord()->update([
+        $record = $this->getRecord();
+        $nextVersion = ($record->versions()->max('version') ?? 0) + 1;
+
+        FormVersion::create([
+            'form_id' => $record->id,
+            'version' => $nextVersion,
             'fields' => $fieldsToSave,
         ]);
 
+        $record->update([
+            'fields' => $fieldsToSave,
+        ]);
+
+        $this->currentVersion = $nextVersion;
+        $this->latestVersion = $nextVersion;
         $this->hasUnsavedChanges = false;
 
         Notification::make()
             ->success()
-            ->title('Form saved')
+            ->title("Saved as v{$nextVersion}")
             ->send();
     }
 
@@ -264,27 +280,58 @@ class FormBuilderPage extends Page
 
     public function undo(): void
     {
-        if ($this->historyIndex <= 0) {
+        if ($this->currentVersion <= 1) {
             return;
         }
 
-        $this->historyIndex--;
-        $this->restoreFromHistory();
+        $this->loadVersion($this->currentVersion - 1);
     }
 
     public function redo(): void
     {
-        if ($this->historyIndex >= count($this->history) - 1) {
+        if ($this->currentVersion >= $this->latestVersion) {
             return;
         }
 
-        $this->historyIndex++;
-        $this->restoreFromHistory();
+        $this->loadVersion($this->currentVersion + 1);
     }
 
     public function resetForm(): void
     {
-        $this->loadFieldsFromRecord();
+        if ($this->currentVersion > 0) {
+            $this->loadVersion($this->currentVersion);
+        } else {
+            $this->loadFieldsFromRecord();
+        }
+    }
+
+    protected function loadVersion(int $version): void
+    {
+        $formVersion = $this->getRecord()->versions()->where('version', $version)->first();
+
+        if (! $formVersion) {
+            return;
+        }
+
+        $this->fields = is_array($formVersion->fields) ? $formVersion->fields : [];
+        $this->currentVersion = $formVersion->version;
+        $this->selectedFieldKey = null;
+        $this->hasUnsavedChanges = false;
+    }
+
+    public function getCurrentVersionLabel(): ?string
+    {
+        if ($this->currentVersion === 0) {
+            return null;
+        }
+
+        $version = $this->getRecord()->versions()->where('version', $this->currentVersion)->first();
+
+        if (! $version) {
+            return "v{$this->currentVersion}";
+        }
+
+        return "v{$this->currentVersion} ({$version->created_at->diffForHumans()})";
     }
 
     public function setActiveTab(string $tab): void
@@ -530,38 +577,6 @@ class FormBuilderPage extends Page
     public function getBackUrl(): string
     {
         return $this->getResourceUrl('view');
-    }
-
-    protected function pushHistory(): void
-    {
-        $state = [
-            'fields' => $this->fields,
-            'selectedFieldKey' => $this->selectedFieldKey,
-        ];
-
-        // Trim any redo history when pushing new state
-        $this->history = array_slice($this->history, 0, $this->historyIndex + 1);
-        $this->history[] = $state;
-        $this->historyIndex = count($this->history) - 1;
-
-        // Keep history reasonable
-        if (count($this->history) > 50) {
-            array_shift($this->history);
-            $this->historyIndex--;
-        }
-    }
-
-    protected function restoreFromHistory(): void
-    {
-        $state = $this->history[$this->historyIndex] ?? null;
-
-        if ($state === null) {
-            return;
-        }
-
-        $this->fields = $state['fields'];
-        $this->selectedFieldKey = $state['selectedFieldKey'];
-        $this->hasUnsavedChanges = true;
     }
 
     protected function generateUniqueFieldKey(string $label, ?string $excludeKey = null): string

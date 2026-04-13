@@ -15,6 +15,11 @@
                     Published
                 </span>
             @endif
+            @if($this->getCurrentVersionLabel())
+                <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20">
+                    {{ $this->getCurrentVersionLabel() }}
+                </span>
+            @endif
             @if($hasUnsavedChanges)
                 <span class="inline-flex items-center rounded-md bg-warning-50 px-2 py-1 text-xs font-medium text-warning-700 ring-1 ring-inset ring-warning-600/20 dark:bg-warning-400/10 dark:text-warning-400 dark:ring-warning-400/20">
                     Unsaved changes
@@ -31,10 +36,10 @@
                 </select>
             </label>
             <div class="flex items-center gap-1">
-                <button type="button" wire:click="undo" @disabled($historyIndex <= 0) class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800">
+                <button type="button" wire:click="undo" @disabled($currentVersion <= 1) class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800">
                     <x-filament::icon icon="heroicon-m-arrow-uturn-left" class="h-4 w-4" />
                 </button>
-                <button type="button" wire:click="redo" @disabled($historyIndex >= count($history) - 1) class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800">
+                <button type="button" wire:click="redo" @disabled($currentVersion >= $latestVersion) class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-gray-800">
                     <x-filament::icon icon="heroicon-m-arrow-uturn-right" class="h-4 w-4" />
                 </button>
             </div>

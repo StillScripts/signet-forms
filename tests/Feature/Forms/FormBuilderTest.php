@@ -351,27 +351,35 @@ test('can reorder fields via sort', function () {
 
 // --- Undo/Redo ---
 
-test('can undo field addition', function () {
+test('can undo to previous saved version', function () {
     [, , $project, $form] = setUpBuilderTest();
 
-    $component = Livewire::test(FormBuilderPage::class, [
+    Livewire::test(FormBuilderPage::class, [
         'parentRecord' => $project,
         'record' => $form->getRouteKey(),
     ])
+        ->call('save')
+        ->assertSet('currentVersion', 1)
         ->call('addField', 'text-input')
+        ->call('save')
+        ->assertSet('currentVersion', 2)
         ->assertCount('fields', 1)
         ->call('undo')
+        ->assertSet('currentVersion', 1)
         ->assertCount('fields', 0);
 });
 
 test('can redo after undo', function () {
     [, , $project, $form] = setUpBuilderTest();
 
-    $component = Livewire::test(FormBuilderPage::class, [
+    Livewire::test(FormBuilderPage::class, [
         'parentRecord' => $project,
         'record' => $form->getRouteKey(),
     ])
+        ->call('save')
         ->call('addField', 'text-input')
+        ->call('save')
+        ->assertCount('fields', 1)
         ->call('undo')
         ->assertCount('fields', 0)
         ->call('redo')

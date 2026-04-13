@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -86,6 +87,19 @@ class Form extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    /**
+     * @return HasMany<FormVersion, $this>
+     */
+    public function versions(): HasMany
+    {
+        return $this->hasMany(FormVersion::class)->orderBy('version');
+    }
+
+    public function latestVersion(): ?FormVersion
+    {
+        return $this->versions()->reorder()->orderByDesc('version')->first();
     }
 
     /**
