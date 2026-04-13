@@ -21,7 +21,7 @@ class FormVersionFactory extends Factory
         return [
             'form_id' => Form::factory(),
             'version' => 1,
-            'fields' => [],
+            'schema' => ['pages' => [['id' => fake()->uuid(), 'title' => null, 'heading' => null, 'subheading' => null, 'submit_button_text' => null, 'fields' => []]]],
         ];
     }
 }

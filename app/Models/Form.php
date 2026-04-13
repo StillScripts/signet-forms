@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-#[Fillable(['project_id', 'name', 'slug', 'description', 'fields', 'is_published'])]
+#[Fillable(['project_id', 'name', 'slug', 'description', 'schema', 'is_published'])]
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
@@ -110,7 +110,7 @@ class Form extends Model
     protected function casts(): array
     {
         return [
-            'fields' => 'array',
+            'schema' => 'array',
             'is_published' => 'boolean',
         ];
     }

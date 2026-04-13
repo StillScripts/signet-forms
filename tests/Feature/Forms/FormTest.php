@@ -94,15 +94,22 @@ test('form slug updates when name changes', function () {
 
 // --- Casts ---
 
-test('form fields are cast to array', function () {
-    $fields = [
-        ['type' => 'text', 'data' => ['label' => 'Name']],
-        ['type' => 'email', 'data' => ['label' => 'Email']],
-    ];
+test('form schema is cast to array', function () {
+    $schema = ['pages' => [[
+        'id' => fake()->uuid(),
+        'title' => null,
+        'heading' => null,
+        'subheading' => null,
+        'submit_button_text' => null,
+        'fields' => [
+            ['type' => 'text', 'data' => ['label' => 'Name']],
+            ['type' => 'email', 'data' => ['label' => 'Email']],
+        ],
+    ]]];
 
-    $form = Form::factory()->create(['fields' => $fields]);
+    $form = Form::factory()->create(['schema' => $schema]);
 
-    expect($form->fresh()->fields)->toBe($fields);
+    expect($form->fresh()->schema)->toBe($schema);
 });
 
 test('form is_published is cast to boolean', function () {

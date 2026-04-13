@@ -25,6 +25,9 @@
                     Unsaved changes
                 </span>
             @endif
+            <span class="inline-flex items-center rounded-md {{ count($pages) > 1 ? 'bg-primary-50 text-primary-700 ring-primary-600/20 dark:bg-primary-400/10 dark:text-primary-400 dark:ring-primary-400/20' : 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-400/10 dark:text-gray-400 dark:ring-gray-400/20' }} px-2 py-1 text-xs font-medium ring-1 ring-inset">
+                {{ count($pages) > 1 ? count($pages) . ' pages' : 'Single page' }}
+            </span>
         </div>
         <div class="flex items-center gap-3">
             <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -104,6 +107,67 @@
                 <span class="text-xs text-gray-400 dark:text-gray-500">{{ count($fields) }} {{ Str::plural('field', count($fields)) }}</span>
             </div>
 
+            {{-- Page Tabs --}}
+            @if($activeTab === 'builder')
+                <div class="flex items-center gap-1 border-b border-gray-200 px-4 py-2 dark:border-white/10">
+                    @foreach($pages as $pageIndex => $page)
+                        <button
+                            type="button"
+                            wire:click="switchPage('{{ $page['id'] }}')"
+                            @class([
+                                'group relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition',
+                                'bg-primary-50 text-primary-700 ring-1 ring-primary-200 dark:bg-primary-950/30 dark:text-primary-400 dark:ring-primary-800' => $activePageId === $page['id'],
+                                'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200' => $activePageId !== $page['id'],
+                            ])
+                        >
+                            {{ $this->getPageLabel($page, $pageIndex) }}
+                            @if(count($pages) > 1)
+                                <span class="text-xs text-gray-400 dark:text-gray-500">({{ count($page['fields'] ?? []) }})</span>
+                            @endif
+                        </button>
+                    @endforeach
+                    <button
+                        type="button"
+                        wire:click="addPage"
+                        class="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm text-gray-400 transition hover:bg-gray-50 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                    >
+                        <x-filament::icon icon="heroicon-m-plus" class="h-3.5 w-3.5" />
+                        Add Page
+                    </button>
+                    @if(count($pages) > 1)
+                        <div class="ml-auto flex items-center gap-0.5">
+                            <button
+                                type="button"
+                                wire:click="movePage('{{ $activePageId }}', 'up')"
+                                @disabled($this->getActivePageIndex() === 0)
+                                class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:bg-gray-800"
+                                title="Move page left"
+                            >
+                                <x-filament::icon icon="heroicon-m-chevron-left" class="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="movePage('{{ $activePageId }}', 'down')"
+                                @disabled($this->getActivePageIndex() === count($pages) - 1)
+                                class="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 disabled:opacity-30 disabled:cursor-not-allowed dark:hover:bg-gray-800"
+                                title="Move page right"
+                            >
+                                <x-filament::icon icon="heroicon-m-chevron-right" class="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                                type="button"
+                                wire:click="removePage('{{ $activePageId }}')"
+                                wire:confirm="Remove this page and all its fields?"
+                                class="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/50 dark:hover:text-red-400"
+                                title="Remove page"
+                            >
+                                <x-filament::icon icon="heroicon-m-trash" class="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             {{-- Builder Tab --}}
             @if($activeTab === 'builder')
                 <div class="p-4">
@@ -179,7 +243,7 @@
             {{-- Preview Tab --}}
             @if($activeTab === 'preview')
                 <div class="p-6">
-                    @if(empty($fields))
+                    @if(empty($fields) && count($pages) <= 1)
                         <p class="text-center text-sm text-gray-500 dark:text-gray-400">Add fields to see a preview.</p>
                     @else
                         <div class="mx-auto max-w-2xl">
@@ -190,7 +254,7 @@
             @endif
         </div>
 
-        {{-- Right Panel: Field Settings --}}
+        {{-- Right Panel: Field Settings or Page Settings --}}
         @if($selectedFieldKey && $this->getSelectedField())
             <div class="w-80 shrink-0 overflow-y-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
                 <div class="flex items-center justify-between border-b border-gray-200 p-4 dark:border-white/10">
@@ -204,6 +268,16 @@
                 </div>
                 <div class="p-4">
                     {{ $this->fieldSettingsSchema }}
+                </div>
+            </div>
+        @elseif($activeTab === 'builder')
+            <div class="w-80 shrink-0 overflow-y-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <div class="border-b border-gray-200 p-4 dark:border-white/10">
+                    <h3 class="text-sm font-semibold text-gray-950 dark:text-white">Page Settings</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $this->getPageLabel($this->getActivePage() ?? [], $this->getActivePageIndex()) }}</p>
+                </div>
+                <div class="p-4">
+                    {{ $this->pageSettingsSchema }}
                 </div>
             </div>
         @endif

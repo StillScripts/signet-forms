@@ -20,6 +20,8 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Wizard;
+use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -41,7 +43,12 @@ class FormBuilderPage extends Page
     protected string $view = 'filament.resources.forms.pages.form-builder';
 
     /** @var list<array<string, mixed>> */
+    public array $pages = [];
+
+    /** @var list<array<string, mixed>> */
     public array $fields = [];
+
+    public ?string $activePageId = null;
 
     public ?string $selectedFieldKey = null;
 
@@ -64,6 +71,9 @@ class FormBuilderPage extends Page
     /** @var array<string, mixed> */
     public ?array $fieldSettingsData = [];
 
+    /** @var array<string, mixed> */
+    public ?array $pageSettingsData = [];
+
     public function mount(int|string $record): void
     {
         $this->record = $this->resolveRecord($record);
@@ -77,18 +87,190 @@ class FormBuilderPage extends Page
         $version = $record->latestVersion();
 
         if ($version) {
-            $this->fields = is_array($version->fields) ? $version->fields : [];
+            $schema = is_array($version->schema) ? $version->schema : [];
             $this->currentVersion = $version->version;
             $this->latestVersion = $version->version;
         } else {
-            $this->fields = is_array($record->fields) ? $record->fields : [];
+            $schema = is_array($record->schema) ? $record->schema : [];
             $this->currentVersion = 0;
             $this->latestVersion = 0;
         }
 
+        $this->loadSchema($schema);
         $this->selectedFieldKey = null;
         $this->hasUnsavedChanges = false;
     }
+
+    protected function loadSchema(array $schema): void
+    {
+        $this->pages = $schema['pages'] ?? [];
+
+        if (empty($this->pages)) {
+            $this->pages = [$this->makeEmptyPage()];
+        }
+
+        $this->activePageId = $this->pages[0]['id'];
+        $this->fields = $this->pages[0]['fields'] ?? [];
+        $this->selectedFieldKey = null;
+    }
+
+    protected function makeEmptyPage(?string $title = null): array
+    {
+        return [
+            'id' => Str::uuid()->toString(),
+            'title' => $title,
+            'heading' => null,
+            'subheading' => null,
+            'submit_button_text' => null,
+            'fields' => [],
+        ];
+    }
+
+    // --- Page Management ---
+
+    public function switchPage(string $pageId): void
+    {
+        if ($pageId === $this->activePageId) {
+            return;
+        }
+
+        $this->syncFieldsToActivePage();
+
+        $this->activePageId = $pageId;
+
+        foreach ($this->pages as $page) {
+            if ($page['id'] === $pageId) {
+                $this->fields = $page['fields'] ?? [];
+                $this->selectedFieldKey = null;
+
+                return;
+            }
+        }
+    }
+
+    public function addPage(): void
+    {
+        $this->syncFieldsToActivePage();
+
+        $page = $this->makeEmptyPage();
+        $this->pages[] = $page;
+        $this->activePageId = $page['id'];
+        $this->fields = [];
+        $this->selectedFieldKey = null;
+        $this->hasUnsavedChanges = true;
+    }
+
+    public function removePage(string $pageId): void
+    {
+        if (count($this->pages) <= 1) {
+            return;
+        }
+
+        $this->syncFieldsToActivePage();
+
+        $this->pages = array_values(
+            array_filter($this->pages, fn (array $page): bool => $page['id'] !== $pageId)
+        );
+
+        if ($this->activePageId === $pageId) {
+            $this->activePageId = $this->pages[0]['id'];
+            $this->fields = $this->pages[0]['fields'] ?? [];
+            $this->selectedFieldKey = null;
+        }
+
+        $this->hasUnsavedChanges = true;
+    }
+
+    public function updatePageData(string $pageId, string $property, ?string $value): void
+    {
+        foreach ($this->pages as $index => $page) {
+            if ($page['id'] === $pageId) {
+                $this->pages[$index][$property] = $value;
+
+                break;
+            }
+        }
+
+        $this->hasUnsavedChanges = true;
+    }
+
+    public function movePage(string $pageId, string $direction): void
+    {
+        $this->syncFieldsToActivePage();
+
+        $currentIndex = null;
+
+        foreach ($this->pages as $index => $page) {
+            if ($page['id'] === $pageId) {
+                $currentIndex = $index;
+
+                break;
+            }
+        }
+
+        if ($currentIndex === null) {
+            return;
+        }
+
+        $newIndex = $direction === 'up' ? $currentIndex - 1 : $currentIndex + 1;
+
+        if ($newIndex < 0 || $newIndex >= count($this->pages)) {
+            return;
+        }
+
+        $page = $this->pages[$currentIndex];
+        $this->pages[$currentIndex] = $this->pages[$newIndex];
+        $this->pages[$newIndex] = $page;
+
+        $this->hasUnsavedChanges = true;
+    }
+
+    public function getActivePageIndex(): int
+    {
+        foreach ($this->pages as $index => $page) {
+            if ($page['id'] === $this->activePageId) {
+                return $index;
+            }
+        }
+
+        return 0;
+    }
+
+    public function getPageLabel(array $page, int $index): string
+    {
+        return $page['title'] ?? 'Page '.($index + 1);
+    }
+
+    public function getSubmitButtonText(array $page, int $index): string
+    {
+        if (! empty($page['submit_button_text'])) {
+            return $page['submit_button_text'];
+        }
+
+        if (count($this->pages) === 1 || $index === count($this->pages) - 1) {
+            return 'Submit';
+        }
+
+        return 'Continue';
+    }
+
+    public function isMultiPage(): bool
+    {
+        return count($this->pages) > 1;
+    }
+
+    protected function syncFieldsToActivePage(): void
+    {
+        foreach ($this->pages as $index => $page) {
+            if ($page['id'] === $this->activePageId) {
+                $this->pages[$index]['fields'] = $this->fields;
+
+                break;
+            }
+        }
+    }
+
+    // --- Field Management ---
 
     public function addField(string $type): void
     {
@@ -242,13 +424,13 @@ class FormBuilderPage extends Page
         $this->hasUnsavedChanges = true;
     }
 
+    // --- Save / Load / Undo / Redo ---
+
     public function save(): void
     {
-        $fieldsToSave = array_map(function (array $field): array {
-            unset($field['_manual_key']);
+        $this->syncFieldsToActivePage();
 
-            return $field;
-        }, $this->fields);
+        $schema = $this->buildSchemaForSave();
 
         $record = $this->getRecord();
         $nextVersion = ($record->versions()->max('version') ?? 0) + 1;
@@ -256,11 +438,11 @@ class FormBuilderPage extends Page
         FormVersion::create([
             'form_id' => $record->id,
             'version' => $nextVersion,
-            'fields' => $fieldsToSave,
+            'schema' => $schema,
         ]);
 
         $record->update([
-            'fields' => $fieldsToSave,
+            'schema' => $schema,
         ]);
 
         $this->currentVersion = $nextVersion;
@@ -271,6 +453,21 @@ class FormBuilderPage extends Page
             ->success()
             ->title("Saved as v{$nextVersion}")
             ->send();
+    }
+
+    protected function buildSchemaForSave(): array
+    {
+        $pages = array_map(function (array $page): array {
+            $page['fields'] = array_map(function (array $field): array {
+                unset($field['_manual_key']);
+
+                return $field;
+            }, $page['fields'] ?? []);
+
+            return $page;
+        }, $this->pages);
+
+        return ['pages' => $pages];
     }
 
     public function updateColumns(int $columns): void
@@ -313,9 +510,9 @@ class FormBuilderPage extends Page
             return;
         }
 
-        $this->fields = is_array($formVersion->fields) ? $formVersion->fields : [];
+        $schema = is_array($formVersion->schema) ? $formVersion->schema : [];
+        $this->loadSchema($schema);
         $this->currentVersion = $formVersion->version;
-        $this->selectedFieldKey = null;
         $this->hasUnsavedChanges = false;
     }
 
@@ -334,10 +531,14 @@ class FormBuilderPage extends Page
         return "v{$this->currentVersion} ({$version->created_at->diffForHumans()})";
     }
 
+    // --- Tabs ---
+
     public function setActiveTab(string $tab): void
     {
         $this->activeTab = $tab;
     }
+
+    // --- Field Types ---
 
     #[Computed]
     public function groupedFieldTypes(): array
@@ -367,7 +568,20 @@ class FormBuilderPage extends Page
         return $field ? FormFieldType::from($field['type']) : null;
     }
 
+    // --- Preview ---
+
     public function previewSchema(Schema $schema): Schema
+    {
+        $this->syncFieldsToActivePage();
+
+        if (count($this->pages) <= 1) {
+            return $this->buildSinglePagePreview($schema);
+        }
+
+        return $this->buildMultiPagePreview($schema);
+    }
+
+    protected function buildSinglePagePreview(Schema $schema): Schema
     {
         $components = [];
 
@@ -383,6 +597,41 @@ class FormBuilderPage extends Page
             ->components([
                 Form::make($components)
                     ->columns($this->columns),
+            ])
+            ->statePath('previewData');
+    }
+
+    protected function buildMultiPagePreview(Schema $schema): Schema
+    {
+        $steps = [];
+
+        foreach ($this->pages as $index => $page) {
+            $fields = $page['fields'] ?? [];
+            $components = [];
+
+            foreach ($fields as $field) {
+                $component = $this->buildFilamentComponent($field);
+
+                if ($component) {
+                    $components[] = $component;
+                }
+            }
+
+            $step = Step::make($this->getPageLabel($page, $index))
+                ->schema($components)
+                ->columns($this->columns);
+
+            if (! empty($page['subheading'])) {
+                $step->description($page['subheading']);
+            }
+
+            $steps[] = $step;
+        }
+
+        return $schema
+            ->components([
+                Wizard::make($steps)
+                    ->skippable(),
             ])
             ->statePath('previewData');
     }
@@ -437,6 +686,8 @@ class FormBuilderPage extends Page
 
         return $component;
     }
+
+    // --- Field Settings Schema ---
 
     public function fieldSettingsSchema(Schema $schema): Schema
     {
@@ -528,6 +779,107 @@ class FormBuilderPage extends Page
             ->statePath('fieldSettingsData');
     }
 
+    // --- Page Settings Schema ---
+
+    public function pageSettingsSchema(Schema $schema): Schema
+    {
+        if ($this->selectedFieldKey !== null) {
+            return $schema->components([]);
+        }
+
+        $activePage = $this->getActivePage();
+
+        if (! $activePage) {
+            return $schema->components([]);
+        }
+
+        $pageIndex = $this->getActivePageIndex();
+
+        $components = [
+            TextInput::make('title')
+                ->label('Page Title')
+                ->placeholder('Page '.($pageIndex + 1))
+                ->helperText('Used in page tabs and wizard step labels')
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn () => $this->syncPageSettingsToPage()),
+            TextInput::make('heading')
+                ->label('Heading')
+                ->placeholder('Page heading...')
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn () => $this->syncPageSettingsToPage()),
+            TextInput::make('subheading')
+                ->label('Subheading')
+                ->placeholder('Page subheading...')
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn () => $this->syncPageSettingsToPage()),
+            TextInput::make('submit_button_text')
+                ->label('Submit Button Text')
+                ->placeholder($this->getSubmitButtonText($activePage, $pageIndex))
+                ->helperText('Leave blank for default: "'.
+                    $this->getSubmitButtonText($activePage, $pageIndex).'"')
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn () => $this->syncPageSettingsToPage()),
+        ];
+
+        return $schema
+            ->components([
+                Form::make($components)
+                    ->columns(1),
+            ])
+            ->statePath('pageSettingsData');
+    }
+
+    public function getActivePage(): ?array
+    {
+        foreach ($this->pages as $page) {
+            if ($page['id'] === $this->activePageId) {
+                return $page;
+            }
+        }
+
+        return null;
+    }
+
+    public function syncPageSettingsFromPage(): void
+    {
+        $page = $this->getActivePage();
+
+        if (! $page) {
+            $this->pageSettingsData = [];
+
+            return;
+        }
+
+        $this->pageSettingsData = [
+            'title' => $page['title'] ?? null,
+            'heading' => $page['heading'] ?? null,
+            'subheading' => $page['subheading'] ?? null,
+            'submit_button_text' => $page['submit_button_text'] ?? null,
+        ];
+    }
+
+    public function syncPageSettingsToPage(): void
+    {
+        if (! $this->activePageId || empty($this->pageSettingsData)) {
+            return;
+        }
+
+        foreach ($this->pages as $index => $page) {
+            if ($page['id'] === $this->activePageId) {
+                $this->pages[$index]['title'] = $this->pageSettingsData['title'] ?? null;
+                $this->pages[$index]['heading'] = $this->pageSettingsData['heading'] ?? null;
+                $this->pages[$index]['subheading'] = $this->pageSettingsData['subheading'] ?? null;
+                $this->pages[$index]['submit_button_text'] = $this->pageSettingsData['submit_button_text'] ?? null;
+
+                break;
+            }
+        }
+
+        $this->hasUnsavedChanges = true;
+    }
+
+    // --- Field Settings Sync ---
+
     protected function syncSettingsFromField(): void
     {
         $selected = $this->getSelectedField();
@@ -578,6 +930,8 @@ class FormBuilderPage extends Page
     {
         return $this->getResourceUrl('view');
     }
+
+    // --- Key Helpers ---
 
     protected function generateUniqueFieldKey(string $label, ?string $excludeKey = null): string
     {

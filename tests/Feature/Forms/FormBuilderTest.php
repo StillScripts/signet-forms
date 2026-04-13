@@ -15,7 +15,7 @@ function setUpBuilderTest(): array
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
     $project = Project::factory()->create(['team_id' => $team->id]);
-    $form = Form::factory()->create(['project_id' => $project->id, 'fields' => null]);
+    $form = Form::factory()->create(['project_id' => $project->id, 'schema' => null]);
 
     test()->actingAs($user);
     test()->setUpFilamentPanel($team);
@@ -272,9 +272,10 @@ test('can save fields to database', function () {
         ->call('save');
 
     $form->refresh();
-    expect($form->fields)->toHaveCount(2)
-        ->and($form->fields[0]['type'])->toBe('text-input')
-        ->and($form->fields[1]['type'])->toBe('textarea');
+    $fields = $form->schema['pages'][0]['fields'];
+    expect($fields)->toHaveCount(2)
+        ->and($fields[0]['type'])->toBe('text-input')
+        ->and($fields[1]['type'])->toBe('textarea');
 });
 
 test('saving clears unsaved changes flag', function () {
@@ -294,10 +295,17 @@ test('saved fields are loaded on page mount', function () {
     [, , $project, $form] = setUpBuilderTest();
 
     $form->update([
-        'fields' => [
-            ['type' => 'text-input', 'key' => 'name', 'sort' => 0, 'data' => FormFieldType::TextInput->defaultData()],
-            ['type' => 'textarea', 'key' => 'bio', 'sort' => 1, 'data' => FormFieldType::Textarea->defaultData()],
-        ],
+        'schema' => ['pages' => [[
+            'id' => fake()->uuid(),
+            'title' => null,
+            'heading' => null,
+            'subheading' => null,
+            'submit_button_text' => null,
+            'fields' => [
+                ['type' => 'text-input', 'key' => 'name', 'sort' => 0, 'data' => FormFieldType::TextInput->defaultData()],
+                ['type' => 'textarea', 'key' => 'bio', 'sort' => 1, 'data' => FormFieldType::Textarea->defaultData()],
+            ],
+        ]]],
     ]);
 
     $component = Livewire::test(FormBuilderPage::class, [
@@ -321,7 +329,7 @@ test('saving empty form is allowed', function () {
         ->call('save');
 
     $form->refresh();
-    expect($form->fields)->toBe([]);
+    expect($form->schema['pages'][0]['fields'])->toBe([]);
 });
 
 // --- Reordering ---
@@ -392,9 +400,16 @@ test('reset restores last saved state', function () {
     [, , $project, $form] = setUpBuilderTest();
 
     $form->update([
-        'fields' => [
-            ['type' => 'text-input', 'key' => 'name', 'sort' => 0, 'data' => FormFieldType::TextInput->defaultData()],
-        ],
+        'schema' => ['pages' => [[
+            'id' => fake()->uuid(),
+            'title' => null,
+            'heading' => null,
+            'subheading' => null,
+            'submit_button_text' => null,
+            'fields' => [
+                ['type' => 'text-input', 'key' => 'name', 'sort' => 0, 'data' => FormFieldType::TextInput->defaultData()],
+            ],
+        ]]],
     ]);
 
     Livewire::test(FormBuilderPage::class, [

@@ -10,13 +10,25 @@ use App\Models\Team;
 use App\Models\User;
 use Livewire\Livewire;
 
+function makeSchema(array $fields = [], ?string $title = null): array
+{
+    return ['pages' => [[
+        'id' => fake()->uuid(),
+        'title' => $title,
+        'heading' => null,
+        'subheading' => null,
+        'submit_button_text' => null,
+        'fields' => $fields,
+    ]]];
+}
+
 function setUpVersioningTest(): array
 {
     $user = User::factory()->create();
     $team = Team::factory()->create();
     $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
     $project = Project::factory()->create(['team_id' => $team->id]);
-    $form = Form::factory()->create(['project_id' => $project->id, 'fields' => null]);
+    $form = Form::factory()->create(['project_id' => $project->id, 'schema' => null]);
 
     test()->actingAs($user);
     test()->setUpFilamentPanel($team);
@@ -40,13 +52,13 @@ test('form has many versions', function () {
 test('form latest version returns highest version', function () {
     $form = Form::factory()->create();
 
-    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 1, 'fields' => ['old']]);
-    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 2, 'fields' => ['new']]);
+    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 1, 'schema' => makeSchema()]);
+    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 2, 'schema' => makeSchema([['type' => 'text-input']])]);
 
     $latest = $form->latestVersion();
 
     expect($latest->version)->toBe(2)
-        ->and($latest->fields)->toBe(['new']);
+        ->and($latest->schema['pages'][0]['fields'])->toHaveCount(1);
 });
 
 test('form version belongs to form', function () {
@@ -80,9 +92,10 @@ test('save creates a new version record', function () {
     expect($form->versions()->count())->toBe(1);
 
     $version = $form->versions()->first();
+    $fields = $version->schema['pages'][0]['fields'];
     expect($version->version)->toBe(1)
-        ->and($version->fields)->toHaveCount(1)
-        ->and($version->fields[0]['type'])->toBe('text-input');
+        ->and($fields)->toHaveCount(1)
+        ->and($fields[0]['type'])->toBe('text-input');
 });
 
 test('subsequent saves increment version number', function () {
@@ -102,7 +115,7 @@ test('subsequent saves increment version number', function () {
     expect($form->versions()->count())->toBe(2);
 });
 
-test('save syncs fields to form model for backward compatibility', function () {
+test('save syncs schema to form model', function () {
     [, , $project, $form] = setUpVersioningTest();
 
     Livewire::test(FormBuilderPage::class, [
@@ -113,8 +126,9 @@ test('save syncs fields to form model for backward compatibility', function () {
         ->call('save');
 
     $form->refresh();
-    expect($form->fields)->toHaveCount(1)
-        ->and($form->fields[0]['type'])->toBe('text-input');
+    $fields = $form->schema['pages'][0]['fields'];
+    expect($fields)->toHaveCount(1)
+        ->and($fields[0]['type'])->toBe('text-input');
 });
 
 // --- Undo/Redo with Versions ---
@@ -262,8 +276,8 @@ test('mount loads latest version fields', function () {
         ['type' => 'text-input', 'key' => 'name', 'sort' => 0, 'data' => FormFieldType::TextInput->defaultData()],
     ];
 
-    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 1, 'fields' => []]);
-    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 2, 'fields' => $fields]);
+    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 1, 'schema' => makeSchema()]);
+    FormVersion::factory()->create(['form_id' => $form->id, 'version' => 2, 'schema' => makeSchema($fields)]);
 
     Livewire::test(FormBuilderPage::class, [
         'parentRecord' => $project,

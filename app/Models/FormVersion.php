@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['form_id', 'version', 'fields'])]
+#[Fillable(['form_id', 'version', 'schema'])]
 class FormVersion extends Model
 {
     /** @use HasFactory<FormVersionFactory> */
@@ -30,7 +30,7 @@ class FormVersion extends Model
     protected function casts(): array
     {
         return [
-            'fields' => 'array',
+            'schema' => 'array',
             'version' => 'integer',
             'created_at' => 'datetime',
         ];
