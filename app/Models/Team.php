@@ -13,6 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * NOTE: The FormForge Technical Architecture document refers to this concept as "Workspaces".
+ * A future rename from Team → Workspace may be considered to align with the product language,
+ * but the underlying functionality is identical. See docs/FormForge_Technical_Architecture_v1.0.docx.
+ */
 #[Fillable(['name', 'slug', 'is_personal'])]
 class Team extends Model implements HasCurrentTenantLabel
 {
