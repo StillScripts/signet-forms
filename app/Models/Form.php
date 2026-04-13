@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\FormFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Support\Str;
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
 
     /**
      * Bootstrap the model and its traits.
@@ -44,7 +45,7 @@ class Form extends Model
     /**
      * Generate a unique slug for the form within its project.
      */
-    protected static function generateUniqueSlug(string $name, int $projectId, ?int $excludeId = null): string
+    protected static function generateUniqueSlug(string $name, string $projectId, ?string $excludeId = null): string
     {
         $defaultSlug = Str::slug($name);
 

@@ -8,7 +8,7 @@
 
 ### Foundation Alignment
 
-- [ ] **[TASK-11] Migrate to UUID primary keys** - Convert all existing tables from auto-incrementing integer PKs to ordered UUIDs. Must be done early (before going live) to avoid breaking references. Affects all models, factories, migrations, and foreign keys. Use `Str::orderedUuid()` for index-friendly UUIDs.
+
 - [ ] **[TASK-12] Expand RBAC to five roles** - Add Editor, Reviewer, and Viewer roles to the TeamRole enum alongside existing Owner, Admin, Member (renamed from Member). Implement the full permission matrix from Architecture Doc Section 4.2 covering form management, submission access, team management, workspace settings, billing, audit trail, and integrations.
 - [ ] **[TASK-13] Add unified form settings JSONB column** - Replace flat form columns (success_heading, success_message) with a structured `settings` JSONB column. Sections: behaviour (submission limits, close date, multiple submissions, save and resume, CAPTCHA), confirmation (post-submit message/redirect, respondent copy), compliance (applicable standards, retention, residency, consent, encryption), branding (logo, colours, fonts, custom CSS). Migrate existing data.
 - [ ] **[TASK-14] Add submission metadata and status workflow** - Extend Submission model with: metadata JSONB (IP, user agent, device, time_to_complete, referrer), form_version integer, status enum (pending, in_review, approved, rejected, archived), assigned_reviewer_id, respondent_email, respondent_name. Add status transition UI in admin panel.
@@ -71,6 +71,7 @@
 
 ## Done
 
+- [x] **[TASK-11] Migrate to UUID primary keys** - Convert all tables to UUIDv7 via HasUuids trait. Consolidate incremental migrations into create-table migrations. Add DatabaseSeeder with test user, two teams, projects, forms, and submissions. All 192 tests pass.
 - [x] **[TASK-10] Review and comply with technical specifications** - Create a comprehensive task list in TASKS.md based on the FormForge Technical Architecture v1.0 document. Map existing work to the architecture, identify gaps, and plan future tasks with proper sequencing. Added 35 new tasks across 8 categories. Added Workspaces rename note to Team model.
 - [x] **[TASK-9] Form submissions with public renderer** - Add a Submission model (JSONB data column, one record per form response). Build a public-facing form renderer page at `/forms/{team}/{form}` using Filament components. Add submissions sidebar navigation, per-form submission viewing, and customisable success page. 30 tests.
 - [x] **[TASK-8] Migrate to page-based schema structure** - Rename `fields` → `schema` on forms and form_versions tables. Restructure data from flat field arrays to `{ "pages": [{ "id", "title", "heading", "subheading", "submit_button_text", "fields" }] }` format supporting single-page and multi-page (wizard) forms. Add multi-page builder UI with page tabs, add/remove/reorder pages, page settings panel. Migrate existing data. Update all tests.

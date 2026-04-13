@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('form_versions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('form_id')->constrained()->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('form_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('version');
-            $table->json('fields')->nullable();
+            $table->json('schema')->nullable();
             $table->timestamp('created_at')->nullable();
 
             $table->unique(['form_id', 'version']);

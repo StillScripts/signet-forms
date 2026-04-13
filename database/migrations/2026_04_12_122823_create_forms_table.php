@@ -12,12 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('forms', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('project_id')->constrained()->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('project_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('slug');
             $table->text('description')->nullable();
-            $table->json('fields')->nullable();
+            $table->json('schema')->nullable();
+            $table->string('success_heading')->nullable();
+            $table->text('success_message')->nullable();
             $table->boolean('is_published')->default(false);
             $table->timestamps();
             $table->softDeletes();

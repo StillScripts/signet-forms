@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\ProjectFactory;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes;
 
     /**
      * Bootstrap the model and its traits.
@@ -45,7 +46,7 @@ class Project extends Model
     /**
      * Generate a unique slug for the project within its team.
      */
-    protected static function generateUniqueSlug(string $name, int $teamId, ?int $excludeId = null): string
+    protected static function generateUniqueSlug(string $name, string $teamId, ?string $excludeId = null): string
     {
         $defaultSlug = Str::slug($name);
 
