@@ -21,6 +21,11 @@ class SubmissionPolicy
         return $user->hasTeamPermission($submission->form->project->team, TeamPermission::ViewSubmission);
     }
 
+    public function review(User $user, Submission $submission): bool
+    {
+        return $user->hasTeamPermission($submission->form->project->team, TeamPermission::ReviewSubmission);
+    }
+
     public function delete(User $user, Submission $submission): bool
     {
         return $user->hasTeamPermission($submission->form->project->team, TeamPermission::DeleteSubmission);

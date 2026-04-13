@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Submissions\Tables;
 
+use App\Enums\SubmissionStatus;
 use App\Models\Form;
 use App\Models\Submission;
 use Filament\Actions\BulkActionGroup;
@@ -22,6 +23,15 @@ class SubmissionsTable
                     ->label('Form')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('status')
+                    ->badge()
+                    ->color(fn (SubmissionStatus $state) => $state->color())
+                    ->formatStateUsing(fn (SubmissionStatus $state) => $state->label())
+                    ->sortable(),
+                TextColumn::make('respondent_email')
+                    ->label('Respondent')
+                    ->placeholder('—')
+                    ->searchable(),
                 TextColumn::make('data')
                     ->label('Response')
                     ->formatStateUsing(function (Submission $record): string {
@@ -45,6 +55,8 @@ class SubmissionsTable
                     ->label('Form')
                     ->options(fn () => Form::whereHas('project', fn ($q) => $q->where('team_id', Filament::getTenant()?->id))->pluck('name', 'id'))
                     ->searchable(),
+                SelectFilter::make('status')
+                    ->options(collect(SubmissionStatus::cases())->mapWithKeys(fn (SubmissionStatus $s) => [$s->value => $s->label()])->toArray()),
             ])
             ->defaultSort('created_at', 'desc')
             ->toolbarActions([

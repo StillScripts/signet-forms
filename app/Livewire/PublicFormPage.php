@@ -69,6 +69,14 @@ class PublicFormPage extends Component implements HasSchemas
         Submission::create([
             'form_id' => $this->formRecord->id,
             'data' => $formData,
+            'metadata' => [
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'referer' => request()->header('referer'),
+            ],
+            'form_version' => $this->formRecord->latestVersion()?->version,
+            'respondent_email' => $this->extractRespondentEmail($formData),
+            'respondent_name' => $this->extractRespondentName($formData),
         ]);
 
         $this->submitted = true;
@@ -201,5 +209,30 @@ class PublicFormPage extends Component implements HasSchemas
     public function isMultiPage(): bool
     {
         return count($this->formRecord->schema['pages'] ?? []) > 1;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function extractRespondentEmail(array $data): ?string
+    {
+        return $data['email'] ?? null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function extractRespondentName(array $data): ?string
+    {
+        if (! empty($data['name'])) {
+            return $data['name'];
+        }
+
+        $parts = array_filter([
+            $data['first_name'] ?? null,
+            $data['last_name'] ?? null,
+        ]);
+
+        return $parts ? implode(' ', $parts) : null;
     }
 }

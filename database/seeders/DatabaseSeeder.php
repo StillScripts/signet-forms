@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\FormFieldType;
+use App\Enums\SubmissionStatus;
 use App\Enums\TeamRole;
 use App\Models\Form;
 use App\Models\FormVersion;
@@ -95,12 +96,42 @@ class DatabaseSeeder extends Seeder
             ),
         ));
 
+        $sampleMetadata = [
+            'ip_address' => '203.0.113.42',
+            'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+            'referer' => 'https://example.com/about',
+        ];
+
         // Sample submissions for the contact form
-        Submission::factory()->create(['form_id' => $contactForm->id, 'data' => ['name' => 'Jane Smith', 'email' => 'jane@example.com', 'message' => 'I love your product!']]);
-        Submission::factory()->create(['form_id' => $contactForm->id, 'data' => ['name' => 'Bob Wilson', 'email' => 'bob@example.com', 'message' => 'Can I get a demo?']]);
+        Submission::factory()->create([
+            'form_id' => $contactForm->id,
+            'data' => ['name' => 'Jane Smith', 'email' => 'jane@example.com', 'message' => 'I love your product!'],
+            'status' => SubmissionStatus::Approved,
+            'metadata' => $sampleMetadata,
+            'form_version' => 1,
+            'respondent_email' => 'jane@example.com',
+            'respondent_name' => 'Jane Smith',
+        ]);
+        Submission::factory()->create([
+            'form_id' => $contactForm->id,
+            'data' => ['name' => 'Bob Wilson', 'email' => 'bob@example.com', 'message' => 'Can I get a demo?'],
+            'status' => SubmissionStatus::Pending,
+            'metadata' => $sampleMetadata,
+            'form_version' => 1,
+            'respondent_email' => 'bob@example.com',
+            'respondent_name' => 'Bob Wilson',
+        ]);
 
         // Sample submissions for the feedback form
-        Submission::factory()->create(['form_id' => $feedbackForm->id, 'data' => ['name' => 'Alice Brown', 'rating' => 'excellent', 'comments' => 'Great experience overall.']]);
+        Submission::factory()->create([
+            'form_id' => $feedbackForm->id,
+            'data' => ['name' => 'Alice Brown', 'rating' => 'excellent', 'comments' => 'Great experience overall.'],
+            'status' => SubmissionStatus::InReview,
+            'metadata' => $sampleMetadata,
+            'form_version' => 1,
+            'respondent_name' => 'Alice Brown',
+            'assigned_reviewer_id' => $user->id,
+        ]);
 
         // Miscellaneous team: one project with a draft form
         $internalProject = Project::factory()->create([
