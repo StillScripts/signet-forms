@@ -35,7 +35,6 @@
 
 ### Templates & API
 
-- [ ] **[TASK-5] Form templates** - Allow users to create a form from a preset template (e.g., Contact Us, Feedback Survey, Registration) instead of starting blank. Seed 10+ templates across industries (government, education, non-profit, events, medical). Shared `templates` table (not tenant-scoped). Template library page in admin panel.
 - [ ] **[TASK-29] REST API v1** - Sanctum token authentication for external consumers. API key management (scopes, expiry, revocation) in workspace settings. Versioned endpoints at `/api/v1` for forms and submissions. Eloquent API Resources. Rate limiting per Architecture Doc Section 9.1.
 - [ ] **[TASK-30] Webhook integration** - Configurable webhook endpoints per form in `integrations` table. HMAC-SHA256 signed payloads. Queued DeliverWebhook job with 5 retries and exponential backoff up to 24h. Delivery logs with status tracking.
 
@@ -68,6 +67,7 @@
 
 ## Done
 
+- [x] **[TASK-5] Form templates** - Add global `form_templates` table (shared across tenants) with FormTemplate model, FormTemplateCategory enum covering 8 industries, and 12 seeded templates (Contact Us, Feedback Survey, Event Registration, Job Application, Patient Intake, Volunteer Sign-Up, Course Evaluation, Public Comment, Bug Report, Workshop Registration, Donation Pledge, Permit Application). Template library Filament page with search and category filtering. "Use Template" action creates form in selected project and redirects to the builder. 23 new tests.
 - [x] **[TASK-14] Add submission metadata and status workflow** - Extend Submission model with metadata JSONB (IP, user agent, referer), form_version integer, status enum (pending, in_review, approved, rejected, archived), assigned_reviewer_id, respondent_email, respondent_name. Status transition UI and reviewer assignment on ViewSubmission page. 26 new tests.
 - [x] **[TASK-13] Add unified form settings JSONB column** - Replace flat form columns (success_heading, success_message) with a structured `settings` JSONB column with four sections (behaviour, confirmation, compliance, branding). FormSettings value object with Castable/Wireable interfaces. Tabbed settings UI in Filament. 5 unit tests, all 230 tests pass.
 - [x] **[TASK-12] Expand RBAC to five roles** - Add Editor, Reviewer, and Viewer roles to TeamRole enum. Implement full 21-permission matrix across 5 roles per Architecture Doc Section 4.2. Admin gains member management. Migration converts existing member role values to editor. 33 new tests.
