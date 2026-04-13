@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-#[Fillable(['project_id', 'name', 'slug', 'description', 'schema', 'is_published'])]
+#[Fillable(['project_id', 'name', 'slug', 'description', 'schema', 'is_published', 'success_heading', 'success_message'])]
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
@@ -100,6 +100,14 @@ class Form extends Model
     public function latestVersion(): ?FormVersion
     {
         return $this->versions()->reorder()->orderByDesc('version')->first();
+    }
+
+    /**
+     * @return HasMany<Submission, $this>
+     */
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(Submission::class);
     }
 
     /**

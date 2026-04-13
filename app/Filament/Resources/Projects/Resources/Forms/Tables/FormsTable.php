@@ -23,6 +23,10 @@ class FormsTable
                 TextColumn::make('description')
                     ->limit(50)
                     ->toggleable(),
+                TextColumn::make('submissions_count')
+                    ->counts('submissions')
+                    ->label('Submissions')
+                    ->sortable(),
                 IconColumn::make('is_published')
                     ->label('Published')
                     ->boolean()

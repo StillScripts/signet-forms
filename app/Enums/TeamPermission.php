@@ -21,4 +21,7 @@ enum TeamPermission: string
     case CreateForm = 'form:create';
     case UpdateForm = 'form:update';
     case DeleteForm = 'form:delete';
+
+    case ViewSubmission = 'submission:view';
+    case DeleteSubmission = 'submission:delete';
 }

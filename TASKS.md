@@ -10,6 +10,7 @@
 
 ## Done
 
+- [x] **[TASK-9] Form submissions with public renderer** - Add a Submission model (JSONB data column, one record per form response). Build a public-facing form renderer page at `/forms/{team}/{form}` using Filament components. Add submissions sidebar navigation, per-form submission viewing, and customisable success page. 30 tests.
 - [x] **[TASK-8] Migrate to page-based schema structure** - Rename `fields` → `schema` on forms and form_versions tables. Restructure data from flat field arrays to `{ "pages": [{ "id", "title", "heading", "subheading", "submit_button_text", "fields" }] }` format supporting single-page and multi-page (wizard) forms. Add multi-page builder UI with page tabs, add/remove/reorder pages, page settings panel. Migrate existing data. Update all tests.
 - [x] **[TASK-7] Add form versioning model** - Introduce a `form_versions` table as an append-only snapshot store. Each save creates a new version record. Replaces in-memory undo/redo with DB-backed version navigation. Builder header shows version label.
 - [x] **[TASK-6] Add top-level Forms sidebar navigation** - Add a top-level "Forms" item in the sidebar (below Projects) showing all forms across all projects in the current team. Table includes a Project column. Clicking a form navigates to the existing nested view. Create action requires project selection.

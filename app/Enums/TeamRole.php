@@ -35,8 +35,12 @@ enum TeamRole: string
                 TeamPermission::CreateForm,
                 TeamPermission::UpdateForm,
                 TeamPermission::DeleteForm,
+                TeamPermission::ViewSubmission,
+                TeamPermission::DeleteSubmission,
             ],
-            self::Member => [],
+            self::Member => [
+                TeamPermission::ViewSubmission,
+            ],
         };
     }
 
