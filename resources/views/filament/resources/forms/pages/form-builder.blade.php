@@ -216,18 +216,51 @@
                                     </div>
 
                                     {{-- Field Content --}}
+                                    @php($fieldType = \App\Enums\FormFieldType::from($field['type']))
                                     <div class="pl-5">
                                         <div class="flex items-center justify-between gap-2">
                                             <div class="flex items-center gap-2">
-                                                <x-filament::icon :icon="\App\Enums\FormFieldType::from($field['type'])->icon()" class="h-4 w-4 text-gray-400" />
-                                                <span class="text-sm font-medium text-gray-950 dark:text-white">{{ $field['data']['label'] ?? $field['key'] }}</span>
+                                                <x-filament::icon :icon="$fieldType->icon()" class="h-4 w-4 text-gray-400" />
+                                                <span class="text-sm font-medium text-gray-950 dark:text-white">
+                                                    @if($fieldType->isLayout())
+                                                        {{ $fieldType->label() }}
+                                                    @else
+                                                        {{ $field['data']['label'] ?? $field['key'] }}
+                                                    @endif
+                                                </span>
                                             </div>
-                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">{{ $field['key'] }}</span>
+                                            @unless($fieldType->isLayout())
+                                                <span class="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">{{ $field['key'] }}</span>
+                                            @endunless
                                         </div>
                                         <div class="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                                            {{ \App\Enums\FormFieldType::from($field['type'])->label() }}
+                                            {{ $fieldType->label() }}
                                         </div>
-                                        @if(!empty($field['data']['placeholder']))
+                                        @if($fieldType->isLayout())
+                                            @switch($field['type'])
+                                                @case('section-header')
+                                                    <div class="mt-2 border-b border-gray-200 pb-1 dark:border-gray-700">
+                                                        <div class="text-sm font-semibold text-gray-950 dark:text-white">{{ $field['data']['heading'] ?? '' }}</div>
+                                                        @if(!empty($field['data']['subheading']))
+                                                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $field['data']['subheading'] }}</div>
+                                                        @endif
+                                                    </div>
+                                                    @break
+                                                @case('divider')
+                                                    <hr class="mt-2 border-gray-200 dark:border-gray-700" />
+                                                    @break
+                                                @case('instructional-text')
+                                                    <div class="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
+                                                        {{ \Illuminate\Support\Str::limit($field['data']['content'] ?? '', 140) }}
+                                                    </div>
+                                                    @break
+                                                @case('image')
+                                                    <div class="mt-2 truncate rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-xs text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
+                                                        {{ $field['data']['url'] ?: 'No image URL set' }}
+                                                    </div>
+                                                    @break
+                                            @endswitch
+                                        @elseif(!empty($field['data']['placeholder']))
                                             <div class="mt-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-400 dark:border-gray-700 dark:bg-gray-800/50">
                                                 {{ $field['data']['placeholder'] }}
                                             </div>

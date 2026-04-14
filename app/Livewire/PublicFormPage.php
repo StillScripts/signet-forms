@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\FormFieldType;
 use App\Models\Form as FormModel;
 use App\Models\Submission;
 use App\Models\Team;
@@ -14,6 +15,9 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Component as SchemaComponent;
+use Filament\Schemas\Components\Html;
+use Filament\Schemas\Components\Image as ImageSchemaComponent;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
@@ -144,23 +148,32 @@ class PublicFormPage extends Component implements HasSchemas
 
     protected function buildFilamentComponent(array $field): ?SchemaComponent
     {
+        $type = FormFieldType::tryFrom($field['type'] ?? '');
+
+        if ($type === null) {
+            return null;
+        }
+
+        if ($type->isLayout()) {
+            return $this->buildLayoutComponent($type, $field);
+        }
+
         $data = $field['data'] ?? [];
         $key = $field['key'];
-        $type = $field['type'];
 
         $component = match ($type) {
-            'text-input' => TextInput::make($key),
-            'textarea' => Textarea::make($key)->rows(3),
-            'number' => TextInput::make($key)->numeric(),
-            'select' => Select::make($key)
+            FormFieldType::TextInput => TextInput::make($key),
+            FormFieldType::Textarea => Textarea::make($key)->rows(3),
+            FormFieldType::Number => TextInput::make($key)->numeric(),
+            FormFieldType::Select => Select::make($key)
                 ->options(collect($data['options'] ?? [])->pluck('label', 'value')->all()),
-            'checkbox' => Checkbox::make($key),
-            'radio-group' => Radio::make($key)
+            FormFieldType::Checkbox => Checkbox::make($key),
+            FormFieldType::RadioGroup => Radio::make($key)
                 ->options(collect($data['options'] ?? [])->pluck('label', 'value')->all()),
-            'toggle' => Toggle::make($key),
-            'date-picker' => DatePicker::make($key),
-            'file-upload' => null,
-            'rich-editor' => Textarea::make($key)->rows(4),
+            FormFieldType::Toggle => Toggle::make($key),
+            FormFieldType::DatePicker => DatePicker::make($key),
+            FormFieldType::FileUpload => null,
+            FormFieldType::RichEditor => Textarea::make($key)->rows(4),
             default => null,
         };
 
@@ -192,6 +205,55 @@ class PublicFormPage extends Component implements HasSchemas
         }
 
         return $component;
+    }
+
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    protected function buildLayoutComponent(FormFieldType $type, array $field): ?SchemaComponent
+    {
+        $data = $field['data'] ?? [];
+
+        $component = match ($type) {
+            FormFieldType::SectionHeader => $this->buildSectionHeaderComponent($data),
+            FormFieldType::Divider => Html::make('<hr class="my-2 border-gray-200 dark:border-white/10" />'),
+            FormFieldType::InstructionalText => Text::make((string) ($data['content'] ?? '')),
+            FormFieldType::Image => ! empty($data['url'])
+                ? ImageSchemaComponent::make($data['url'], (string) ($data['alt'] ?? ''))
+                : null,
+            default => null,
+        };
+
+        if ($component === null) {
+            return null;
+        }
+
+        $columnSpan = $data['column_span'] ?? 1;
+        if ($columnSpan > 1) {
+            $component->columnSpan($columnSpan);
+        }
+
+        return $component;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function buildSectionHeaderComponent(array $data): SchemaComponent
+    {
+        $heading = (string) ($data['heading'] ?? '');
+        $subheading = (string) ($data['subheading'] ?? '');
+
+        $subheadingHtml = $subheading !== ''
+            ? '<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">'.e($subheading).'</p>'
+            : '';
+
+        return Html::make(
+            '<div class="border-b border-gray-200 pb-2 dark:border-white/10">'.
+            '<h3 class="text-base font-semibold text-gray-950 dark:text-white">'.e($heading).'</h3>'.
+            $subheadingHtml.
+            '</div>'
+        );
     }
 
     public function getSubmitLabel(): string

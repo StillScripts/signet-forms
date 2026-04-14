@@ -16,6 +16,10 @@ enum FormFieldType: string
     case DatePicker = 'date-picker';
     case FileUpload = 'file-upload';
     case RichEditor = 'rich-editor';
+    case SectionHeader = 'section-header';
+    case Divider = 'divider';
+    case InstructionalText = 'instructional-text';
+    case Image = 'image';
 
     public function label(): string
     {
@@ -30,6 +34,10 @@ enum FormFieldType: string
             self::DatePicker => 'Date Picker',
             self::FileUpload => 'File Upload',
             self::RichEditor => 'Rich Text Editor',
+            self::SectionHeader => 'Section Header',
+            self::Divider => 'Divider',
+            self::InstructionalText => 'Instructional Text',
+            self::Image => 'Image',
         };
     }
 
@@ -46,6 +54,10 @@ enum FormFieldType: string
             self::DatePicker => 'Date selection',
             self::FileUpload => 'File attachment',
             self::RichEditor => 'Rich text with formatting',
+            self::SectionHeader => 'Heading and optional subheading',
+            self::Divider => 'Horizontal rule between fields',
+            self::InstructionalText => 'Paragraph of guidance for respondents',
+            self::Image => 'Embedded image from a URL',
         };
     }
 
@@ -62,6 +74,10 @@ enum FormFieldType: string
             self::DatePicker => Heroicon::OutlinedCalendar,
             self::FileUpload => Heroicon::OutlinedArrowUpTray,
             self::RichEditor => Heroicon::OutlinedDocumentText,
+            self::SectionHeader => Heroicon::OutlinedHashtag,
+            self::Divider => Heroicon::OutlinedMinus,
+            self::InstructionalText => Heroicon::OutlinedChatBubbleLeft,
+            self::Image => Heroicon::OutlinedPhoto,
         };
     }
 
@@ -71,11 +87,24 @@ enum FormFieldType: string
             self::TextInput, self::Textarea, self::Number, self::Select, self::Checkbox, self::RadioGroup, self::Toggle => 'Basic Fields',
             self::DatePicker => 'Date & Time',
             self::FileUpload, self::RichEditor => 'Advanced',
+            self::SectionHeader, self::Divider, self::InstructionalText, self::Image => 'Layout',
+        };
+    }
+
+    public function isLayout(): bool
+    {
+        return match ($this) {
+            self::SectionHeader, self::Divider, self::InstructionalText, self::Image => true,
+            default => false,
         };
     }
 
     public function hasPlaceholder(): bool
     {
+        if ($this->isLayout()) {
+            return false;
+        }
+
         return match ($this) {
             self::Checkbox, self::Toggle, self::FileUpload, self::RadioGroup => false,
             default => true,
@@ -105,6 +134,10 @@ enum FormFieldType: string
      */
     public function defaultData(): array
     {
+        if ($this->isLayout()) {
+            return $this->layoutDefaultData();
+        }
+
         $data = [
             'label' => $this->label(),
             'placeholder' => $this->hasPlaceholder() ? '' : null,
@@ -127,6 +160,33 @@ enum FormFieldType: string
         }
 
         return $data;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function layoutDefaultData(): array
+    {
+        return match ($this) {
+            self::SectionHeader => [
+                'heading' => 'Section Heading',
+                'subheading' => null,
+                'column_span' => 1,
+            ],
+            self::Divider => [
+                'column_span' => 1,
+            ],
+            self::InstructionalText => [
+                'content' => 'Add instructional text here.',
+                'column_span' => 1,
+            ],
+            self::Image => [
+                'url' => '',
+                'alt' => '',
+                'column_span' => 1,
+            ],
+            default => [],
+        };
     }
 
     /**

@@ -20,6 +20,9 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Html;
+use Filament\Schemas\Components\Image as ImageSchemaComponent;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
@@ -638,22 +641,32 @@ class FormBuilderPage extends Page
 
     protected function buildFilamentComponent(array $field): ?Component
     {
+        $type = FormFieldType::tryFrom($field['type']);
+
+        if ($type === null) {
+            return null;
+        }
+
+        if ($type->isLayout()) {
+            return $this->buildLayoutComponent($type, $field);
+        }
+
         $data = $field['data'] ?? [];
         $key = $field['key'];
 
-        $component = match ($field['type']) {
-            'text-input' => TextInput::make($key),
-            'textarea' => Textarea::make($key)->rows(3),
-            'number' => TextInput::make($key)->numeric(),
-            'select' => Select::make($key)
+        $component = match ($type) {
+            FormFieldType::TextInput => TextInput::make($key),
+            FormFieldType::Textarea => Textarea::make($key)->rows(3),
+            FormFieldType::Number => TextInput::make($key)->numeric(),
+            FormFieldType::Select => Select::make($key)
                 ->options(collect($data['options'] ?? [])->pluck('label', 'value')->all()),
-            'checkbox' => Checkbox::make($key),
-            'radio-group' => Radio::make($key)
+            FormFieldType::Checkbox => Checkbox::make($key),
+            FormFieldType::RadioGroup => Radio::make($key)
                 ->options(collect($data['options'] ?? [])->pluck('label', 'value')->all()),
-            'toggle' => Toggle::make($key),
-            'date-picker' => DatePicker::make($key),
-            'file-upload' => FileUpload::make($key),
-            'rich-editor' => RichEditor::make($key),
+            FormFieldType::Toggle => Toggle::make($key),
+            FormFieldType::DatePicker => DatePicker::make($key),
+            FormFieldType::FileUpload => FileUpload::make($key),
+            FormFieldType::RichEditor => RichEditor::make($key),
             default => null,
         };
 
@@ -687,6 +700,56 @@ class FormBuilderPage extends Page
         return $component;
     }
 
+    /**
+     * @param  array<string, mixed>  $field
+     */
+    protected function buildLayoutComponent(FormFieldType $type, array $field): ?Component
+    {
+        $data = $field['data'] ?? [];
+
+        $component = match ($type) {
+            FormFieldType::SectionHeader => $this->buildSectionHeaderComponent($data),
+            FormFieldType::Divider => Html::make('<hr class="my-2 border-gray-200 dark:border-white/10" />'),
+            FormFieldType::InstructionalText => Text::make((string) ($data['content'] ?? '')),
+            FormFieldType::Image => ! empty($data['url'])
+                ? ImageSchemaComponent::make($data['url'], (string) ($data['alt'] ?? ''))
+                : Html::make('<div class="rounded-md border border-dashed border-gray-300 px-4 py-6 text-center text-sm text-gray-400 dark:border-gray-700">No image URL provided</div>'),
+            default => null,
+        };
+
+        if ($component === null) {
+            return null;
+        }
+
+        $columnSpan = $data['column_span'] ?? 1;
+        if ($columnSpan > 1) {
+            $component->columnSpan($columnSpan);
+        }
+
+        return $component;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function buildSectionHeaderComponent(array $data): Component
+    {
+        $heading = (string) ($data['heading'] ?? '');
+        $subheading = (string) ($data['subheading'] ?? '');
+
+        $headingHtml = e($heading);
+        $subheadingHtml = $subheading !== ''
+            ? '<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">'.e($subheading).'</p>'
+            : '';
+
+        return Html::make(
+            '<div class="border-b border-gray-200 pb-2 dark:border-white/10">'.
+            '<h3 class="text-base font-semibold text-gray-950 dark:text-white">'.$headingHtml.'</h3>'.
+            $subheadingHtml.
+            '</div>'
+        );
+    }
+
     // --- Field Settings Schema ---
 
     public function fieldSettingsSchema(Schema $schema): Schema
@@ -696,6 +759,10 @@ class FormBuilderPage extends Page
 
         if (! $selected || ! $selectedType) {
             return $schema->components([]);
+        }
+
+        if ($selectedType->isLayout()) {
+            return $this->buildLayoutSettingsSchema($schema, $selectedType);
         }
 
         $components = [
@@ -770,6 +837,58 @@ class FormBuilderPage extends Page
                 ->live(onBlur: true)
                 ->afterStateUpdated(fn () => $this->syncSettingsToField());
         }
+
+        return $schema
+            ->components([
+                Form::make($components)
+                    ->columns(1),
+            ])
+            ->statePath('fieldSettingsData');
+    }
+
+    protected function buildLayoutSettingsSchema(Schema $schema, FormFieldType $type): Schema
+    {
+        $components = match ($type) {
+            FormFieldType::SectionHeader => [
+                TextInput::make('heading')
+                    ->label('Heading')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn () => $this->syncSettingsToField()),
+                TextInput::make('subheading')
+                    ->label('Subheading')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn () => $this->syncSettingsToField()),
+            ],
+            FormFieldType::Divider => [],
+            FormFieldType::InstructionalText => [
+                Textarea::make('content')
+                    ->label('Content')
+                    ->rows(4)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn () => $this->syncSettingsToField()),
+            ],
+            FormFieldType::Image => [
+                TextInput::make('url')
+                    ->label('Image URL')
+                    ->placeholder('https://example.com/image.png')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn () => $this->syncSettingsToField()),
+                TextInput::make('alt')
+                    ->label('Alt Text')
+                    ->helperText('Describe the image for screen readers')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated(fn () => $this->syncSettingsToField()),
+            ],
+            default => [],
+        };
+
+        $components[] = Select::make('column_span')
+            ->label('Column Span')
+            ->options(collect(range(1, $this->columns))->mapWithKeys(
+                fn (int $i): array => [$i => $i.' '.Str::plural('Column', $i)]
+            )->all())
+            ->live()
+            ->afterStateUpdated(fn () => $this->syncSettingsToField());
 
         return $schema
             ->components([
