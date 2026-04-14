@@ -9,8 +9,6 @@
 ### Foundation Alignment
 
 
-- [ ] **[TASK-15] Audit logging** - Create append-only `audit_logs` table (resource_type, resource_id, action, actor, IP, details JSONB). Build AuditService and queued WriteAuditLog job. Log: form CRUD, publish/unpublish, submission view/status change/export/delete, team member changes, settings changes, login events. Add read-only Filament page for browsing audit trail.
-
 ### Builder & Field Types
 
 - [ ] **[TASK-16] Expand field type library** - Add field types from Architecture Doc Section 6.3: email, phone, date_range, time, rating, ranking, single_select (dropdown variant), multi_select, yes_no, signature, address. Implement builder property editors and public form renderers for each. Group as Basic, Choice, and Advanced in the field palette.
@@ -22,7 +20,6 @@
 
 - [ ] **[TASK-20] Submission review workflow** - Build multi-stage approval engine: `workflow_stages` table (name, order, assigned_role/users, SLA days, escalation), `workflow_actions` table (append-only action log). Submission detail slide-over with Workflow tab showing timeline and action buttons (approve/reject/request changes). Scheduled CheckWorkflowSla job for escalation.
 - [ ] **[TASK-21] Submission notes** - Add `submission_notes` table (author, body, timestamps, soft deletes). Internal-only comments visible in submission detail. Notes tab in the submission view with threaded display.
-- [ ] **[TASK-22] CSV/Excel export of submissions** - Queued ProcessBulkExport job that streams results to storage. Email download link to requester. Filterable by date range, status, form. Role-based export restrictions with audit-logged reason.
 - [ ] **[TASK-23] Submission PDF generation** - Queued job using Browsershot or Snappy. Per-submission PDF view matching the form layout with respondent data filled in. Optional auto-generation on submit (configurable in form settings). Store in S3.
 - [ ] **[TASK-24] Email notifications** - Create `notification_rules` table (form_id, trigger, recipients JSONB, subject/body templates, attach_pdf, enabled). Queued SendNotificationEmail job. Triggers: new submission, status change, workflow action. Configurable per form in settings.
 
@@ -71,6 +68,8 @@
 
 ## Done
 
+- [x] **[TASK-15] Audit logging** - Add append-only `audit_logs` table (uuid, team_id, user_id, resource_type, resource_id, action, IP, user_agent, details JSONB) with AuditService and queued WriteAuditLog job. AuditAction enum covers 19 actions across forms, submissions, memberships, teams, and auth events. Observers wired for Form/Submission/Team/Membership; auth listeners for login/logout/failed. Filament AuditLogs page gated by `audit:view` permission with action/actor/date-range filters. 23 new tests.
+- [x] **[TASK-22] CSV/Excel export of submissions** - Queued ProcessBulkExport job streams submissions via `lazyById(500)` to a per-team CSV on local disk. SubmissionExport model tracks status/filters/reason/expiry; SubmissionExportStatus enum covers the 4 states. Export action in SubmissionsTable captures filters + reason. Signed download route gated by requester check or `audit:view`. CSV cells are sanitised against formula injection. SubmissionExportReady mailable with temporary signed URL; scheduled `exports:clean` command purges expired exports daily. 17 new tests.
 - [x] **[TASK-5] Form templates** - Add global `form_templates` table (shared across tenants) with FormTemplate model, FormTemplateCategory enum covering 8 industries, and 12 seeded templates (Contact Us, Feedback Survey, Event Registration, Job Application, Patient Intake, Volunteer Sign-Up, Course Evaluation, Public Comment, Bug Report, Workshop Registration, Donation Pledge, Permit Application). Template library Filament page with search and category filtering. "Use Template" action creates form in selected project and redirects to the builder. 23 new tests.
 - [x] **[TASK-14] Add submission metadata and status workflow** - Extend Submission model with metadata JSONB (IP, user agent, referer), form_version integer, status enum (pending, in_review, approved, rejected, archived), assigned_reviewer_id, respondent_email, respondent_name. Status transition UI and reviewer assignment on ViewSubmission page. 26 new tests.
 - [x] **[TASK-13] Add unified form settings JSONB column** - Replace flat form columns (success_heading, success_message) with a structured `settings` JSONB column with four sections (behaviour, confirmation, compliance, branding). FormSettings value object with Castable/Wireable interfaces. Tabbed settings UI in Filament. 5 unit tests, all 230 tests pass.

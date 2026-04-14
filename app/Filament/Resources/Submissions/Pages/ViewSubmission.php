@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources\Submissions\Pages;
 
+use App\Enums\AuditAction;
 use App\Enums\SubmissionStatus;
 use App\Filament\Resources\Submissions\SubmissionResource;
 use App\Models\Membership;
 use App\Models\Submission;
+use App\Services\AuditService;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
@@ -20,6 +22,16 @@ use Illuminate\Support\Facades\Gate;
 class ViewSubmission extends ViewRecord
 {
     protected static string $resource = SubmissionResource::class;
+
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+
+        AuditService::log(
+            action: AuditAction::SubmissionViewed,
+            resource: $this->getRecord(),
+        );
+    }
 
     public function infolist(Schema $schema): Schema
     {
@@ -101,7 +113,15 @@ class ViewSubmission extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (array $data) use ($record): void {
-                    $record->transitionTo(SubmissionStatus::from($data['status']));
+                    $oldStatus = $record->status;
+                    $newStatus = SubmissionStatus::from($data['status']);
+                    $record->transitionTo($newStatus);
+
+                    AuditService::log(
+                        action: AuditAction::SubmissionStatusChanged,
+                        resource: $record,
+                        details: ['old' => $oldStatus->value, 'new' => $newStatus->value],
+                    );
 
                     Notification::make()
                         ->title('Status updated')
@@ -128,7 +148,17 @@ class ViewSubmission extends ViewRecord
                 ])
                 ->fillForm(fn () => ['assigned_reviewer_id' => $record->assigned_reviewer_id])
                 ->action(function (array $data) use ($record): void {
+                    $oldReviewerId = $record->assigned_reviewer_id;
                     $record->update(['assigned_reviewer_id' => $data['assigned_reviewer_id']]);
+
+                    AuditService::log(
+                        action: AuditAction::SubmissionReviewerAssigned,
+                        resource: $record,
+                        details: [
+                            'old_reviewer_id' => $oldReviewerId,
+                            'new_reviewer_id' => $data['assigned_reviewer_id'],
+                        ],
+                    );
 
                     Notification::make()
                         ->title('Reviewer updated')

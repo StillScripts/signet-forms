@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AcceptInvitationController;
+use App\Http\Controllers\ExportDownloadController;
 use App\Http\Controllers\QrCodeDownloadController;
 use App\Livewire\PublicFormPage;
 use Illuminate\Support\Facades\Route;
@@ -14,4 +15,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('forms/{form:id}/qr-code/{format}', QrCodeDownloadController::class)
         ->where('format', 'png|svg')
         ->name('forms.qr-code');
+
+    Route::get('exports/{export}/download', ExportDownloadController::class)
+        ->middleware('signed')
+        ->name('exports.download');
 });

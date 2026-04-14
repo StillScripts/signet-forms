@@ -2,6 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Form;
+use App\Models\Membership;
+use App\Models\Submission;
+use App\Models\Team;
+use App\Observers\FormObserver;
+use App\Observers\MembershipObserver;
+use App\Observers\SubmissionObserver;
+use App\Observers\TeamObserver;
 use Carbon\CarbonImmutable;
 use Filament\Events\TenantSet;
 use Illuminate\Support\Facades\Date;
@@ -35,6 +43,16 @@ class AppServiceProvider extends ServiceProvider
                 $user->update(['current_team_id' => $tenant->id]);
             }
         });
+
+        $this->registerAuditObservers();
+    }
+
+    protected function registerAuditObservers(): void
+    {
+        Form::observe(FormObserver::class);
+        Submission::observe(SubmissionObserver::class);
+        Team::observe(TeamObserver::class);
+        Membership::observe(MembershipObserver::class);
     }
 
     /**
