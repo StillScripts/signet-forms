@@ -12,7 +12,6 @@
 ### Builder & Field Types
 
 - [ ] **[TASK-16] Expand field type library** - Add field types from Architecture Doc Section 6.3: email, phone, date_range, time, rating, ranking, single_select (dropdown variant), multi_select, yes_no, signature, address. Implement builder property editors and public form renderers for each. Group as Basic, Choice, and Advanced in the field palette.
-- [x] **[TASK-17] Layout elements in builder** - Add non-data-collecting elements: section_header, divider, instructional_text, image. These render in both builder canvas and public form but are excluded from submission validation and data storage.
 - [ ] **[TASK-18] Conditional logic engine** - Create `logic_rules` table and LogicEngine service. Support show/hide/require/skip-to-page actions with AND/OR condition chaining. Evaluate rules server-side on submission (discard hidden field values). Store rule references on fields via logicRuleIds.
 - [ ] **[TASK-19] Logic editor UI** - Build Filament custom page for managing logic rules per form. Visual rule builder with condition rows, action selection, and test mode to preview logic without publishing.
 
@@ -26,7 +25,6 @@
 ### Distribution & Respondent Experience
 
 - [ ] **[TASK-25] Save and resume** - Add resume_token to submissions. Allow respondents to save partial progress and receive an email with a resume link. Resume URL: `/{form-slug}/resume/{token}`. Token-based access, no authentication required.
-- [x] **[TASK-26] QR code generation** - Generate QR codes for published form URLs. PNG/SVG download from the form view page. Display alongside the existing share URL.
 - [ ] **[TASK-27] Embed distribution** - Generate iframe embed snippet with configurable dimensions. Copy-to-clipboard in form distribution settings. Embed-friendly layout variant for the public form renderer.
 - [ ] **[TASK-28] Per-tenant respondent branding** - CSS custom properties set from workspace branding config. Configurable: logo, primary/secondary colours, background, font, button labels, progress bar style, form width. Applied to public form renderer without rebuilding CSS.
 
@@ -70,6 +68,8 @@
 
 - [x] **[TASK-15] Audit logging** - Add append-only `audit_logs` table (uuid, team_id, user_id, resource_type, resource_id, action, IP, user_agent, details JSONB) with AuditService and queued WriteAuditLog job. AuditAction enum covers 19 actions across forms, submissions, memberships, teams, and auth events. Observers wired for Form/Submission/Team/Membership; auth listeners for login/logout/failed. Filament AuditLogs page gated by `audit:view` permission with action/actor/date-range filters. 23 new tests.
 - [x] **[TASK-22] CSV/Excel export of submissions** - Queued ProcessBulkExport job streams submissions via `lazyById(500)` to a per-team CSV on local disk. SubmissionExport model tracks status/filters/reason/expiry; SubmissionExportStatus enum covers the 4 states. Export action in SubmissionsTable captures filters + reason. Signed download route gated by requester check or `audit:view`. CSV cells are sanitised against formula injection. SubmissionExportReady mailable with temporary signed URL; scheduled `exports:clean` command purges expired exports daily. 17 new tests.
+- [x] **[TASK-17] Layout elements in builder** - Add non-data-collecting elements: section_header, divider, instructional_text, image. These render in both builder canvas and public form but are excluded from submission validation and data storage.
+- [x] **[TASK-26] QR code generation** - Generate QR codes for published form URLs. PNG/SVG download from the form view page. Display alongside the existing share URL.
 - [x] **[TASK-5] Form templates** - Add global `form_templates` table (shared across tenants) with FormTemplate model, FormTemplateCategory enum covering 8 industries, and 12 seeded templates (Contact Us, Feedback Survey, Event Registration, Job Application, Patient Intake, Volunteer Sign-Up, Course Evaluation, Public Comment, Bug Report, Workshop Registration, Donation Pledge, Permit Application). Template library Filament page with search and category filtering. "Use Template" action creates form in selected project and redirects to the builder. 23 new tests.
 - [x] **[TASK-14] Add submission metadata and status workflow** - Extend Submission model with metadata JSONB (IP, user agent, referer), form_version integer, status enum (pending, in_review, approved, rejected, archived), assigned_reviewer_id, respondent_email, respondent_name. Status transition UI and reviewer assignment on ViewSubmission page. 26 new tests.
 - [x] **[TASK-13] Add unified form settings JSONB column** - Replace flat form columns (success_heading, success_message) with a structured `settings` JSONB column with four sections (behaviour, confirmation, compliance, branding). FormSettings value object with Castable/Wireable interfaces. Tabbed settings UI in Filament. 5 unit tests, all 230 tests pass.
