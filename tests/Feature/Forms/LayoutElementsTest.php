@@ -1,51 +1,13 @@
 <?php
 
 use App\Enums\FormFieldType;
-use App\Enums\TeamRole;
 use App\Filament\Resources\Projects\Resources\Forms\Pages\FormBuilderPage;
 use App\Livewire\PublicFormPage;
 use App\Models\Form;
 use App\Models\Project;
 use App\Models\Submission;
 use App\Models\Team;
-use App\Models\User;
 use Livewire\Livewire;
-
-function setUpLayoutBuilderTest(): array
-{
-    $user = User::factory()->create();
-    $team = Team::factory()->create();
-    $team->members()->attach($user, ['role' => TeamRole::Owner->value]);
-    $project = Project::factory()->create(['team_id' => $team->id]);
-    $form = Form::factory()->create(['project_id' => $project->id, 'schema' => null]);
-
-    test()->actingAs($user);
-    test()->setUpFilamentPanel($team);
-
-    return [$user, $team, $project, $form];
-}
-
-function makeLayoutFormSchema(array $fields): array
-{
-    return ['pages' => [[
-        'id' => fake()->uuid(),
-        'title' => null,
-        'heading' => null,
-        'subheading' => null,
-        'submit_button_text' => null,
-        'fields' => $fields,
-    ]]];
-}
-
-function makeLayoutField(FormFieldType $type, string $key, array $data = []): array
-{
-    return [
-        'type' => $type->value,
-        'key' => $key,
-        'sort' => 0,
-        'data' => array_merge($type->defaultData(), $data),
-    ];
-}
 
 test('all layout element types report isLayout true', function () {
     expect(FormFieldType::SectionHeader->isLayout())->toBeTrue()
@@ -301,6 +263,40 @@ test('image layout element renders alt text on public form', function () {
     ])
         ->assertSeeHtml('Company logo banner')
         ->assertSeeHtml('https://example.com/logo.png');
+});
+
+test('public form omits image layout when URL is empty', function () {
+    $team = Team::factory()->create();
+    $project = Project::factory()->create(['team_id' => $team->id]);
+    $form = Form::factory()->create([
+        'project_id' => $project->id,
+        'is_published' => true,
+        'schema' => makeLayoutFormSchema([
+            makeLayoutField(FormFieldType::Image, 'image_1', [
+                'url' => '',
+                'alt' => 'Placeholder alt must not appear alone',
+            ]),
+        ]),
+    ]);
+
+    Livewire::test(PublicFormPage::class, [
+        'team' => $team,
+        'formSlug' => $form->slug,
+    ])
+        ->assertDontSee('No image URL provided')
+        ->assertDontSee('Placeholder alt must not appear alone');
+});
+
+test('builder preview shows placeholder when image URL is empty', function () {
+    [, , $project, $form] = setUpLayoutBuilderTest();
+
+    Livewire::test(FormBuilderPage::class, [
+        'parentRecord' => $project,
+        'record' => $form->getRouteKey(),
+    ])
+        ->call('addField', FormFieldType::Image->value)
+        ->call('setActiveTab', 'preview')
+        ->assertSee('No image URL provided');
 });
 
 test('builder updates section header heading via settings', function () {

@@ -44,7 +44,4 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
-{
-    // ..
-}
+require __DIR__.'/TestHelpers.php';

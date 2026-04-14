@@ -44,6 +44,7 @@
       "Skill(create-branch)",
       "Skill(create-pr)",
       "Skill(deslop)",
+      "Skill(doc-coauthoring)",
       "Skill(filament-development)",
       "Skill(find-bugs)",
       "Skill(find-skills)",
@@ -54,9 +55,11 @@
       "Skill(livewire-development)",
       "Skill(memory-management)",
       "Skill(pest-testing)",
+      "Skill(product-brainstorming)",
       "Skill(review-pr)",
       "Skill(tailwindcss-development)",
-      "Skill(task-management)"
+      "Skill(task-management)",
+      "Skill(write-spec)"
     ],
     "deny": []
   },
