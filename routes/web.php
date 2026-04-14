@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AcceptInvitationController;
+use App\Http\Controllers\QrCodeDownloadController;
 use App\Livewire\PublicFormPage;
 use Illuminate\Support\Facades\Route;
 
@@ -10,4 +11,7 @@ Route::get('forms/{team:slug}/{formSlug}', PublicFormPage::class)->name('forms.s
 
 Route::middleware(['auth'])->group(function () {
     Route::get('invitations/{invitation}/accept', AcceptInvitationController::class)->name('invitations.accept');
+    Route::get('forms/{form:id}/qr-code/{format}', QrCodeDownloadController::class)
+        ->where('format', 'png|svg')
+        ->name('forms.qr-code');
 });
