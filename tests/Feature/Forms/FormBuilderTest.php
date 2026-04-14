@@ -85,7 +85,7 @@ test('added field has correct default data', function () {
 
     $fields = $component->get('fields');
     expect($fields[0]['type'])->toBe('select')
-        ->and($fields[0]['data']['label'])->toBe('Select')
+        ->and($fields[0]['data']['label'])->toBe('Dropdown')
         ->and($fields[0]['data']['options'])->toHaveCount(2);
 });
 

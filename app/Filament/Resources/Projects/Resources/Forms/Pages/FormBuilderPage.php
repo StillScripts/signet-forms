@@ -677,7 +677,7 @@ class FormBuilderPage extends Page
             ->live(onBlur: true)
             ->afterStateUpdated(fn () => $this->syncSettingsToField());
 
-        if (! in_array($selected['type'], ['file-upload'])) {
+        if ($this->supportsTextualDefault($selectedType)) {
             $components[] = TextInput::make('default_value')
                 ->label('Default Value')
                 ->placeholder('Default value...')
@@ -699,13 +699,15 @@ class FormBuilderPage extends Page
             ->afterStateUpdated(fn () => $this->syncSettingsToField());
 
         if ($selectedType->hasMinMax()) {
+            [$minLabel, $maxLabel] = $this->minMaxLabels($selectedType);
+
             $components[] = TextInput::make('min')
-                ->label($selected['type'] === 'number' ? 'Min Value' : 'Min Length')
+                ->label($minLabel)
                 ->numeric()
                 ->live(onBlur: true)
                 ->afterStateUpdated(fn () => $this->syncSettingsToField());
             $components[] = TextInput::make('max')
-                ->label($selected['type'] === 'number' ? 'Max Value' : 'Max Length')
+                ->label($maxLabel)
                 ->numeric()
                 ->live(onBlur: true)
                 ->afterStateUpdated(fn () => $this->syncSettingsToField());
@@ -726,12 +728,138 @@ class FormBuilderPage extends Page
                 ->afterStateUpdated(fn () => $this->syncSettingsToField());
         }
 
+        foreach ($this->buildTypeSpecificSettings($selectedType) as $typeSpecific) {
+            $components[] = $typeSpecific;
+        }
+
         return $schema
             ->components([
                 Form::make($components)
                     ->columns(1),
             ])
             ->statePath('fieldSettingsData');
+    }
+
+    protected function supportsTextualDefault(FormFieldType $type): bool
+    {
+        return match ($type) {
+            FormFieldType::TextInput,
+            FormFieldType::Textarea,
+            FormFieldType::Number,
+            FormFieldType::Email,
+            FormFieldType::Phone,
+            FormFieldType::Select,
+            FormFieldType::RadioGroup,
+            FormFieldType::Time,
+            FormFieldType::ColorPicker,
+            FormFieldType::DatePicker,
+            FormFieldType::DateTimePicker => true,
+            default => false,
+        };
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    protected function minMaxLabels(FormFieldType $type): array
+    {
+        return match ($type) {
+            FormFieldType::Number, FormFieldType::Slider => ['Min Value', 'Max Value'],
+            FormFieldType::Repeater => ['Min Items', 'Max Items'],
+            default => ['Min Length', 'Max Length'],
+        };
+    }
+
+    /**
+     * @return list<Component>
+     */
+    protected function buildTypeSpecificSettings(FormFieldType $type): array
+    {
+        $sync = fn () => $this->syncSettingsToField();
+
+        return match ($type) {
+            FormFieldType::Rating => [
+                TextInput::make('max')
+                    ->label('Max Rating')
+                    ->numeric()
+                    ->minValue(2)
+                    ->maxValue(10)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated($sync),
+                Select::make('icon')
+                    ->label('Icon')
+                    ->options([
+                        'star' => 'Star',
+                        'heart' => 'Heart',
+                        'thumbs-up' => 'Thumbs Up',
+                    ])
+                    ->live()
+                    ->afterStateUpdated($sync),
+            ],
+            FormFieldType::Slider => [
+                TextInput::make('step')
+                    ->label('Step')
+                    ->numeric()
+                    ->minValue(1)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated($sync),
+            ],
+            FormFieldType::ColorPicker => [
+                Select::make('format')
+                    ->label('Format')
+                    ->options([
+                        'hex' => 'HEX',
+                        'rgb' => 'RGB',
+                        'rgba' => 'RGBA',
+                        'hsl' => 'HSL',
+                    ])
+                    ->live()
+                    ->afterStateUpdated($sync),
+            ],
+            FormFieldType::KeyValue => [
+                TextInput::make('key_label')
+                    ->label('Key Label')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated($sync),
+                TextInput::make('value_label')
+                    ->label('Value Label')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated($sync),
+            ],
+            FormFieldType::CodeEditor => [
+                Select::make('language')
+                    ->label('Language')
+                    ->options([
+                        'php' => 'PHP',
+                        'javascript' => 'JavaScript',
+                        'html' => 'HTML',
+                        'css' => 'CSS',
+                        'json' => 'JSON',
+                        'markdown' => 'Markdown',
+                        'sql' => 'SQL',
+                    ])
+                    ->live()
+                    ->afterStateUpdated($sync),
+            ],
+            FormFieldType::TagsInput => [
+                Repeater::make('suggestions')
+                    ->schema([
+                        TextInput::make('value')->required(),
+                    ])
+                    ->label('Tag Suggestions')
+                    ->defaultItems(0)
+                    ->reorderable(false)
+                    ->live(onBlur: true)
+                    ->afterStateUpdated($sync),
+            ],
+            FormFieldType::Repeater => [
+                TextInput::make('item_label')
+                    ->label('Item Label')
+                    ->live(onBlur: true)
+                    ->afterStateUpdated($sync),
+            ],
+            default => [],
+        };
     }
 
     protected function buildLayoutSettingsSchema(Schema $schema, FormFieldType $type): Schema

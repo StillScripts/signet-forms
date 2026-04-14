@@ -11,7 +11,6 @@
 
 ### Builder & Field Types
 
-- [ ] **[TASK-16] Expand field type library** - Add field types from Architecture Doc Section 6.3: email, phone, date_range, time, rating, ranking, single_select (dropdown variant), multi_select, yes_no, signature, address. Implement builder property editors and public form renderers for each. Group as Basic, Choice, and Advanced in the field palette.
 - [ ] **[TASK-18] Conditional logic engine** - Create `logic_rules` table and LogicEngine service. Support show/hide/require/skip-to-page actions with AND/OR condition chaining. Evaluate rules server-side on submission (discard hidden field values). Store rule references on fields via logicRuleIds.
 - [ ] **[TASK-19] Logic editor UI** - Build Filament custom page for managing logic rules per form. Visual rule builder with condition rows, action selection, and test mode to preview logic without publishing.
 
@@ -62,6 +61,7 @@
 
 ## Done
 
+- [x] **[TASK-16] Expand field type library** - Add 20 new FormFieldType cases (Email, Phone, MarkdownEditor, MultiSelect, CheckboxList, ToggleButtons, YesNo, Rating, Ranking, DateTimePicker, Time, DateRange, Signature, Address, Slider, ColorPicker, TagsInput, KeyValue, CodeEditor, Repeater). Introduce FieldCategory enum (Basic / Choice / Advanced / Layout) and regroup every type. Signature backed by saade/filament-autograph; rating via ToggleButtons with icons and colors; ranking via reorderable Repeater; address/date-range via Fieldset with nested state. 95 new tests; 441 total pass.
 - [x] **[TASK-46] Deduplicate builder and public form renderers** - Extract `buildFilamentComponent()`, `buildLayoutComponent()`, and `buildSectionHeaderComponent()` into a shared service (e.g., `App\Services\FieldComponentBuilder`) consumed by both `FormBuilderPage` and `PublicFormPage`. ~50 lines of duplication added by TASK-17 on top of pre-existing copy-paste. As part of this cleanup: (a) add a test asserting an image layout element with empty URL is absent on the public form (the two renderers intentionally diverge — builder shows a placeholder, public renders nothing — and this should be locked in), (b) promote `setUpLayoutBuilderTest()` and `makeLayoutFormSchema()` helpers out of `tests/Feature/Forms/LayoutElementsTest.php` into `tests/TestHelpers.php` or a shared trait so future suites (e.g., TASK-18 logic engine) can reuse them.
 
 - [x] **[TASK-15] Audit logging** - Add append-only `audit_logs` table (uuid, team_id, user_id, resource_type, resource_id, action, IP, user_agent, details JSONB) with AuditService and queued WriteAuditLog job. AuditAction enum covers 19 actions across forms, submissions, memberships, teams, and auth events. Observers wired for Form/Submission/Team/Membership; auth listeners for login/logout/failed. Filament AuditLogs page gated by `audit:view` permission with action/actor/date-range filters. 23 new tests.
