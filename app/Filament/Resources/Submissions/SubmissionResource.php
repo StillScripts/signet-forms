@@ -35,6 +35,7 @@ class SubmissionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->completed()
             ->whereHas('form', fn (Builder $query) => $query->whereHas('project', fn (Builder $q) => $q->where('team_id', Filament::getTenant()?->id)));
     }
 

@@ -106,19 +106,82 @@ class FormTemplateSeeder extends Seeder
             [
                 'name' => 'Patient Intake',
                 'slug' => 'patient-intake',
-                'description' => 'Collect patient information, medical history, and consent for healthcare providers.',
+                'description' => 'Multi-page patient intake covering personal details, medical history, insurance, and consent. Ideal for save-and-resume.',
                 'category' => FormTemplateCategory::Healthcare,
                 'icon' => 'heroicon-o-heart',
-                'schema' => $this->schema([
-                    $this->field('text-input', 'first_name', ['label' => 'First Name', 'is_required' => true]),
-                    $this->field('text-input', 'last_name', ['label' => 'Last Name', 'is_required' => true]),
-                    $this->field('date-picker', 'date_of_birth', ['label' => 'Date of Birth', 'is_required' => true]),
-                    $this->field('text-input', 'email', ['label' => 'Email Address']),
-                    $this->field('text-input', 'phone', ['label' => 'Phone Number', 'is_required' => true]),
-                    $this->field('textarea', 'medical_conditions', ['label' => 'Current Medical Conditions', 'column_span' => 2]),
-                    $this->field('textarea', 'medications', ['label' => 'Current Medications', 'column_span' => 2]),
-                    $this->field('text-input', 'emergency_contact', ['label' => 'Emergency Contact Name & Phone', 'is_required' => true, 'column_span' => 2]),
-                    $this->field('checkbox', 'consent', ['label' => 'I consent to the collection and processing of my health information', 'is_required' => true]),
+                'schema' => $this->multiPageSchema([
+                    [
+                        'title' => 'Personal Details',
+                        'heading' => 'Tell us about yourself',
+                        'subheading' => 'We use these details to create your patient record.',
+                        'submit_button_text' => 'Continue',
+                        'fields' => [
+                            $this->field('text-input', 'first_name', ['label' => 'First Name', 'is_required' => true]),
+                            $this->field('text-input', 'last_name', ['label' => 'Last Name', 'is_required' => true]),
+                            $this->field('date-picker', 'date_of_birth', ['label' => 'Date of Birth', 'is_required' => true]),
+                            $this->field('select', 'gender', ['label' => 'Gender', 'options' => [
+                                ['label' => 'Female', 'value' => 'female'],
+                                ['label' => 'Male', 'value' => 'male'],
+                                ['label' => 'Non-binary', 'value' => 'non-binary'],
+                                ['label' => 'Prefer not to say', 'value' => 'prefer-not-to-say'],
+                            ]]),
+                            $this->field('text-input', 'email', ['label' => 'Email Address', 'is_required' => true]),
+                            $this->field('text-input', 'phone', ['label' => 'Phone Number', 'is_required' => true]),
+                            $this->field('textarea', 'home_address', ['label' => 'Home Address', 'is_required' => true, 'column_span' => 2]),
+                            $this->field('text-input', 'emergency_contact_name', ['label' => 'Emergency Contact Name', 'is_required' => true]),
+                            $this->field('text-input', 'emergency_contact_phone', ['label' => 'Emergency Contact Phone', 'is_required' => true]),
+                        ],
+                    ],
+                    [
+                        'title' => 'Medical History',
+                        'heading' => 'Your health history',
+                        'subheading' => 'Your clinician will review this before your appointment.',
+                        'submit_button_text' => 'Continue',
+                        'fields' => [
+                            $this->field('textarea', 'medical_conditions', ['label' => 'Current or Past Medical Conditions', 'column_span' => 2]),
+                            $this->field('textarea', 'medications', ['label' => 'Current Medications and Dosages', 'column_span' => 2]),
+                            $this->field('textarea', 'allergies', ['label' => 'Known Allergies (medications, foods, environmental)', 'column_span' => 2]),
+                            $this->field('textarea', 'surgeries', ['label' => 'Past Surgeries or Hospitalisations', 'column_span' => 2]),
+                            $this->field('textarea', 'family_history', ['label' => 'Relevant Family Medical History', 'column_span' => 2]),
+                            $this->field('radio-group', 'smoker', ['label' => 'Do you smoke?', 'options' => [
+                                ['label' => 'Never', 'value' => 'never'],
+                                ['label' => 'Former smoker', 'value' => 'former'],
+                                ['label' => 'Current smoker', 'value' => 'current'],
+                            ]]),
+                            $this->field('radio-group', 'alcohol', ['label' => 'Alcohol consumption', 'options' => [
+                                ['label' => 'None', 'value' => 'none'],
+                                ['label' => 'Occasional', 'value' => 'occasional'],
+                                ['label' => 'Regular', 'value' => 'regular'],
+                            ]]),
+                        ],
+                    ],
+                    [
+                        'title' => 'Insurance',
+                        'heading' => 'Insurance details',
+                        'subheading' => 'Have your insurance card handy.',
+                        'submit_button_text' => 'Continue',
+                        'fields' => [
+                            $this->field('text-input', 'insurance_provider', ['label' => 'Insurance Provider', 'is_required' => true]),
+                            $this->field('text-input', 'policy_number', ['label' => 'Policy Number', 'is_required' => true]),
+                            $this->field('text-input', 'group_number', ['label' => 'Group Number']),
+                            $this->field('text-input', 'policy_holder', ['label' => 'Policy Holder Name', 'is_required' => true]),
+                            $this->field('date-picker', 'policy_start_date', ['label' => 'Policy Start Date']),
+                            $this->field('file-upload', 'insurance_card', ['label' => 'Insurance Card (front and back)', 'column_span' => 2]),
+                        ],
+                    ],
+                    [
+                        'title' => 'Consent',
+                        'heading' => 'Consent and acknowledgements',
+                        'subheading' => 'Please review and confirm the following before submitting.',
+                        'submit_button_text' => 'Submit Intake',
+                        'fields' => [
+                            $this->field('checkbox', 'consent_treatment', ['label' => 'I consent to medical treatment by the clinic staff.', 'is_required' => true, 'column_span' => 2]),
+                            $this->field('checkbox', 'consent_privacy', ['label' => 'I have read and agree to the privacy policy.', 'is_required' => true, 'column_span' => 2]),
+                            $this->field('checkbox', 'consent_data_sharing', ['label' => 'I consent to sharing my records with other healthcare providers when clinically necessary.', 'column_span' => 2]),
+                            $this->field('text-input', 'signature', ['label' => 'Electronic Signature (type full name)', 'is_required' => true, 'column_span' => 2]),
+                            $this->field('date-picker', 'signed_on', ['label' => 'Signed Date', 'is_required' => true]),
+                        ],
+                    ],
                 ]),
             ],
             [
@@ -286,6 +349,25 @@ class FormTemplateSeeder extends Seeder
             'submit_button_text' => null,
             'fields' => $fields,
         ]]];
+    }
+
+    /**
+     * Build a multi-page schema. Each page may specify title, heading, subheading,
+     * submit_button_text, and fields; all are optional except fields.
+     *
+     * @param  list<array<string, mixed>>  $pages
+     * @return array<string, mixed>
+     */
+    private function multiPageSchema(array $pages): array
+    {
+        return ['pages' => array_map(fn (array $page) => [
+            'id' => fake()->uuid(),
+            'title' => $page['title'] ?? null,
+            'heading' => $page['heading'] ?? null,
+            'subheading' => $page['subheading'] ?? null,
+            'submit_button_text' => $page['submit_button_text'] ?? null,
+            'fields' => $page['fields'] ?? [],
+        ], $pages)];
     }
 
     /**

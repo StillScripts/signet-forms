@@ -140,6 +140,7 @@ class ProcessBulkExport implements ShouldQueue
         $filters = $export->filters ?? [];
 
         return Submission::query()
+            ->completed()
             ->where('form_id', $export->form_id)
             ->whereHas('form.project', fn (Builder $q) => $q->where('team_id', $export->team_id))
             ->when($filters['statuses'] ?? null, function (Builder $query, array $statuses) {

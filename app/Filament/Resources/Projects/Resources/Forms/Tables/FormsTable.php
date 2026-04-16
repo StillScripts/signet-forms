@@ -10,6 +10,7 @@ use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class FormsTable
 {
@@ -24,7 +25,9 @@ class FormsTable
                     ->limit(50)
                     ->toggleable(),
                 TextColumn::make('submissions_count')
-                    ->counts('submissions')
+                    ->counts([
+                        'submissions' => fn (Builder $query) => $query->where('is_draft', false),
+                    ])
                     ->label('Submissions')
                     ->sortable(),
                 IconColumn::make('is_published')

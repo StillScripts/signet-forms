@@ -2,6 +2,8 @@
 
 ## Active
 
+- [ ] **[TASK-25] Save and resume** - Add resume_token to submissions. Allow respondents to save partial progress and receive an email with a resume link. Resume URL: `/{form-slug}/resume/{token}`. Token-based access, no authentication required.
+
 ## Waiting On
 
 ## Someday
@@ -23,7 +25,6 @@
 
 ### Distribution & Respondent Experience
 
-- [ ] **[TASK-25] Save and resume** - Add resume_token to submissions. Allow respondents to save partial progress and receive an email with a resume link. Resume URL: `/{form-slug}/resume/{token}`. Token-based access, no authentication required.
 - [ ] **[TASK-27] Embed distribution** - Generate iframe embed snippet with configurable dimensions. Copy-to-clipboard in form distribution settings. Embed-friendly layout variant for the public form renderer.
 - [ ] **[TASK-28] Per-tenant respondent branding** - CSS custom properties set from workspace branding config. Configurable: logo, primary/secondary colours, background, font, button labels, progress bar style, form width. Applied to public form renderer without rebuilding CSS.
 

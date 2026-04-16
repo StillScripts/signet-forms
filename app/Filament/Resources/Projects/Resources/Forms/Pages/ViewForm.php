@@ -41,7 +41,7 @@ class ViewForm extends ViewRecord
                     'tenant' => Filament::getTenant(),
                     'tableFilters' => ['form_id' => ['value' => $this->record->id]],
                 ]))
-                ->badge(fn () => $this->record->submissions()->count() ?: null),
+                ->badge(fn () => $this->record->submissions()->completed()->count() ?: null),
             EditAction::make(),
         ];
     }

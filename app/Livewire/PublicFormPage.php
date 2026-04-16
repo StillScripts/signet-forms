@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Enums\FieldComponentRenderTarget;
+use App\Mail\SubmissionResumeLink;
 use App\Models\Form as FormModel;
 use App\Models\Submission;
 use App\Models\Team;
@@ -15,14 +16,27 @@ use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 class PublicFormPage extends Component implements HasSchemas
 {
     use InteractsWithSchemas;
 
+    protected const RESUME_WINDOW_DAYS = 30;
+
+    protected const SAVE_RATE_LIMIT_PER_MINUTE = 5;
+
+    protected const SAVE_RATE_LIMIT_PER_HOUR = 20;
+
+    #[Locked]
     public FormModel $formRecord;
 
+    #[Locked]
     public Team $team;
 
     /** @var array<string, mixed> */
@@ -30,7 +44,25 @@ class PublicFormPage extends Component implements HasSchemas
 
     public bool $submitted = false;
 
-    public function mount(Team $team, string $formSlug): void
+    #[Locked]
+    public ?string $submissionId = null;
+
+    #[Locked]
+    public ?int $resumedPageIndex = null;
+
+    #[Locked]
+    public bool $wasResumedFromToken = false;
+
+    public bool $showSaveForm = false;
+
+    public bool $saveEmailSent = false;
+
+    public bool $alreadySubmitted = false;
+
+    #[Validate('required|email|max:255')]
+    public string $saveEmail = '';
+
+    public function mount(Team $team, string $formSlug, ?string $token = null): void
     {
         Filament::setCurrentPanel(Filament::getPanel('admin'));
 
@@ -43,6 +75,13 @@ class PublicFormPage extends Component implements HasSchemas
         abort_unless($formRecord->is_published, 404);
 
         $this->formRecord = $formRecord;
+
+        if ($token !== null) {
+            $this->loadDraft($token);
+
+            return;
+        }
+
         $this->form->fill();
     }
 
@@ -61,26 +100,165 @@ class PublicFormPage extends Component implements HasSchemas
     {
         $formData = $this->form->getState();
 
-        Submission::create([
-            'form_id' => $this->formRecord->id,
-            'data' => $formData,
-            'metadata' => [
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-                'referer' => request()->header('referer'),
-            ],
-            'form_version' => $this->formRecord->latestVersion()?->version,
-            'respondent_email' => $this->extractRespondentEmail($formData),
-            'respondent_name' => $this->extractRespondentName($formData),
-        ]);
+        if ($this->submissionId) {
+            $submission = Submission::where('id', $this->submissionId)
+                ->where('form_id', $this->formRecord->id)
+                ->where('is_draft', true)
+                ->first();
+
+            if ($submission === null) {
+                $this->alreadySubmitted = true;
+
+                return;
+            }
+
+            $submission->update([
+                'data' => $formData,
+                'is_draft' => false,
+                'resume_token' => null,
+                'resume_token_expires_at' => null,
+                'resume_page_index' => null,
+                'respondent_email' => $this->extractRespondentEmail($formData) ?? $submission->respondent_email,
+                'respondent_name' => $this->extractRespondentName($formData) ?? $submission->respondent_name,
+            ]);
+        } else {
+            Submission::create([
+                'form_id' => $this->formRecord->id,
+                'data' => $formData,
+                'metadata' => $this->requestMetadata(),
+                'form_version' => $this->formRecord->latestVersion()?->version,
+                'respondent_email' => $this->extractRespondentEmail($formData),
+                'respondent_name' => $this->extractRespondentName($formData),
+            ]);
+        }
 
         $this->submitted = true;
+    }
+
+    public function openSaveForm(): void
+    {
+        $this->showSaveForm = true;
+        $this->saveEmailSent = false;
+    }
+
+    public function cancelSave(): void
+    {
+        $this->showSaveForm = false;
+        $this->resetValidation('saveEmail');
+    }
+
+    public function saveProgress(?int $currentPageIndex = null): void
+    {
+        $this->validateOnly('saveEmail');
+
+        if ($this->isSaveRateLimited()) {
+            $this->addError('saveEmail', 'Too many attempts. Please try again later.');
+
+            return;
+        }
+
+        $this->hitSaveRateLimiters();
+
+        $rawState = $this->form->getRawState();
+        $formData = is_array($rawState) ? $rawState : [];
+
+        $submission = $this->submissionId
+            ? Submission::where('id', $this->submissionId)
+                ->where('form_id', $this->formRecord->id)
+                ->where('is_draft', true)
+                ->first()
+            : null;
+
+        if ($this->submissionId && $submission === null) {
+            $this->alreadySubmitted = true;
+
+            return;
+        }
+
+        if ($submission === null) {
+            $submission = Submission::create([
+                'form_id' => $this->formRecord->id,
+                'data' => $formData,
+                'metadata' => $this->requestMetadata(),
+                'form_version' => $this->formRecord->latestVersion()?->version,
+                'respondent_email' => $this->saveEmail,
+                'respondent_name' => $this->extractRespondentName($formData),
+                'is_draft' => true,
+                'resume_token' => Submission::generateResumeToken(),
+                'resume_token_expires_at' => Carbon::now()->addDays(self::RESUME_WINDOW_DAYS),
+                'resume_page_index' => $currentPageIndex,
+            ]);
+
+            $this->submissionId = $submission->id;
+        } else {
+            $updates = [
+                'data' => $formData,
+                'respondent_name' => $this->extractRespondentName($formData) ?? $submission->respondent_name,
+                'resume_token_expires_at' => Carbon::now()->addDays(self::RESUME_WINDOW_DAYS),
+                'resume_page_index' => $currentPageIndex,
+            ];
+
+            if ($submission->respondent_email === null) {
+                $updates['respondent_email'] = $this->extractRespondentEmail($formData) ?? $this->saveEmail;
+            }
+
+            $submission->update($updates);
+        }
+
+        Mail::to($this->saveEmail)->queue(new SubmissionResumeLink($submission->fresh()));
+
+        $this->saveEmailSent = true;
+    }
+
+    protected function saveRateLimiterKeys(): array
+    {
+        $ip = request()->ip() ?? 'unknown';
+        $email = strtolower(trim($this->saveEmail));
+        $identifier = $email !== '' ? $ip.'|'.$email : $ip;
+
+        return [
+            'minute' => 'public-form:save:minute:'.sha1($identifier),
+            'hour' => 'public-form:save:hour:'.sha1($identifier),
+        ];
+    }
+
+    protected function isSaveRateLimited(): bool
+    {
+        $keys = $this->saveRateLimiterKeys();
+
+        return RateLimiter::tooManyAttempts($keys['minute'], self::SAVE_RATE_LIMIT_PER_MINUTE)
+            || RateLimiter::tooManyAttempts($keys['hour'], self::SAVE_RATE_LIMIT_PER_HOUR);
+    }
+
+    protected function hitSaveRateLimiters(): void
+    {
+        $keys = $this->saveRateLimiterKeys();
+
+        RateLimiter::hit($keys['minute'], 60);
+        RateLimiter::hit($keys['hour'], 3600);
     }
 
     public function render(): View
     {
         return view('livewire.public-form-page')
             ->layout('layouts.public');
+    }
+
+    protected function loadDraft(string $token): void
+    {
+        $submission = Submission::where('form_id', $this->formRecord->id)
+            ->where('resume_token', $token)
+            ->where('is_draft', true)
+            ->first();
+
+        abort_unless($submission && $submission->isResumable(), 404);
+
+        $this->submissionId = $submission->id;
+        $this->resumedPageIndex = $submission->resume_page_index;
+        $this->wasResumedFromToken = true;
+        $this->saveEmail = (string) $submission->respondent_email;
+        $this->data = is_array($submission->data) ? $submission->data : [];
+        $this->form->fill($this->data);
     }
 
     protected function buildSinglePageForm(Schema $schema, array $page): Schema
@@ -115,9 +293,14 @@ class PublicFormPage extends Component implements HasSchemas
             $steps[] = $step;
         }
 
+        $startStep = $this->resumedPageIndex !== null
+            ? min($this->resumedPageIndex + 1, count($steps))
+            : 1;
+
         return $schema
             ->components([
                 Wizard::make($steps)
+                    ->startOnStep($startStep)
                     ->submitAction(view('livewire.partials.submit-button', [
                         'label' => $this->getSubmitLabel(),
                     ])),
@@ -157,6 +340,23 @@ class PublicFormPage extends Component implements HasSchemas
     public function isMultiPage(): bool
     {
         return count($this->formRecord->schema['pages'] ?? []) > 1;
+    }
+
+    public function isResumed(): bool
+    {
+        return $this->wasResumedFromToken && $this->submissionId !== null;
+    }
+
+    /**
+     * @return array<string, ?string>
+     */
+    protected function requestMetadata(): array
+    {
+        return [
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'referer' => request()->header('referer'),
+        ];
     }
 
     /**
