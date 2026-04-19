@@ -7,7 +7,12 @@
     @filamentStyles
     @vite('resources/css/filament/admin/theme.css')
 </head>
-<body class="min-h-screen bg-gray-50 antialiased dark:bg-gray-950">
+@php($embedded = request()->boolean('embed'))
+<body @class([
+    'min-h-screen antialiased',
+    'bg-gray-50 dark:bg-gray-950' => ! $embedded,
+    'bg-transparent' => $embedded,
+])>
     {{ $slot }}
 
     @filamentScripts

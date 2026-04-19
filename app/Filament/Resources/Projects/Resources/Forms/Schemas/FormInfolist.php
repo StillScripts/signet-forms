@@ -51,6 +51,40 @@ class FormInfolist
                     ->collapsible()
                     ->columnSpanFull()
                     ->visible(fn (Form $record): bool => $record->is_published),
+                Section::make('Embed')
+                    ->description('Copy this snippet to embed the form on your website')
+                    ->icon('heroicon-o-code-bracket')
+                    ->schema([
+                        TextEntry::make('embed_snippet')
+                            ->label('Iframe snippet')
+                            ->state(fn (Form $record): string => self::buildEmbedSnippet($record))
+                            ->fontFamily(FontFamily::Mono)
+                            ->copyable()
+                            ->copyMessage('Copied to clipboard')
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible()
+                    ->columnSpanFull()
+                    ->visible(fn (Form $record): bool => $record->is_published && $record->settings->embed->allowEmbedding),
             ]);
+    }
+
+    protected static function buildEmbedSnippet(Form $record): string
+    {
+        $url = route('forms.show', [
+            'team' => $record->project->team,
+            'formSlug' => $record->slug,
+        ]).'?embed=1';
+
+        $width = htmlspecialchars($record->settings->embed->resolvedWidth(), ENT_QUOTES);
+        $height = $record->settings->embed->resolvedHeight();
+        $src = htmlspecialchars($url, ENT_QUOTES);
+
+        return sprintf(
+            '<iframe src="%s" width="%s" height="%d" frameborder="0" style="border:0;" loading="lazy"></iframe>',
+            $src,
+            $width,
+            $height,
+        );
     }
 }

@@ -59,6 +59,9 @@ class PublicFormPage extends Component implements HasSchemas
 
     public bool $alreadySubmitted = false;
 
+    #[Locked]
+    public bool $embedded = false;
+
     #[Validate('required|email|max:255')]
     public string $saveEmail = '';
 
@@ -75,6 +78,7 @@ class PublicFormPage extends Component implements HasSchemas
         abort_unless($formRecord->is_published, 404);
 
         $this->formRecord = $formRecord;
+        $this->embedded = request()->boolean('embed');
 
         if ($token !== null) {
             $this->loadDraft($token);

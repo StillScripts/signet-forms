@@ -6,6 +6,7 @@ use App\ValueObjects\Settings\BehaviourSettings;
 use App\ValueObjects\Settings\BrandingSettings;
 use App\ValueObjects\Settings\ComplianceSettings;
 use App\ValueObjects\Settings\ConfirmationSettings;
+use App\ValueObjects\Settings\EmbedSettings;
 use Illuminate\Contracts\Database\Eloquent\Castable;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ class FormSettings implements Castable, Wireable
         public ConfirmationSettings $confirmation = new ConfirmationSettings,
         public ComplianceSettings $compliance = new ComplianceSettings,
         public BrandingSettings $branding = new BrandingSettings,
+        public EmbedSettings $embed = new EmbedSettings,
     ) {}
 
     public static function defaults(): static
@@ -35,6 +37,7 @@ class FormSettings implements Castable, Wireable
             confirmation: isset($data['confirmation']) ? ConfirmationSettings::fromArray($data['confirmation']) : new ConfirmationSettings,
             compliance: isset($data['compliance']) ? ComplianceSettings::fromArray($data['compliance']) : new ComplianceSettings,
             branding: isset($data['branding']) ? BrandingSettings::fromArray($data['branding']) : new BrandingSettings,
+            embed: isset($data['embed']) ? EmbedSettings::fromArray($data['embed']) : new EmbedSettings,
         );
     }
 
@@ -48,6 +51,7 @@ class FormSettings implements Castable, Wireable
             'confirmation' => $this->confirmation->toArray(),
             'compliance' => $this->compliance->toArray(),
             'branding' => $this->branding->toArray(),
+            'embed' => $this->embed->toArray(),
         ];
     }
 

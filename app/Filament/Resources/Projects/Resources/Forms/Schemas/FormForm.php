@@ -100,6 +100,26 @@ class FormForm
                                             ->rows(3)
                                             ->maxLength(5000),
                                     ]),
+                                Tab::make('Embed')
+                                    ->icon('heroicon-o-code-bracket')
+                                    ->schema([
+                                        Toggle::make('settings.embed.allow_embedding')
+                                            ->label('Allow embedding')
+                                            ->helperText('Allow this form to be embedded in other websites via an iframe.')
+                                            ->default(true),
+                                        TextInput::make('settings.embed.width')
+                                            ->label('Width')
+                                            ->helperText('Width of the embedded iframe (e.g. 100%, 600px).')
+                                            ->default('100%')
+                                            ->maxLength(50),
+                                        TextInput::make('settings.embed.height')
+                                            ->label('Height (pixels)')
+                                            ->helperText('Height of the embedded iframe in pixels.')
+                                            ->numeric()
+                                            ->minValue(100)
+                                            ->maxValue(5000)
+                                            ->default(600),
+                                    ]),
                             ]),
                     ])
                     ->collapsed()
